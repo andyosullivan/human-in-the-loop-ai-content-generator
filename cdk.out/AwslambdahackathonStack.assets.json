@@ -1,0 +1,34 @@
+{
+  "version": "44.0.0",
+  "files": {
+    "fd87bef2be7cbf9db1bdb133ddc9c804d76483cecf1ddc80eedd6e3b9b48cb5f": {
+      "displayName": "HelloFn/Code",
+      "source": {
+        "path": "asset.fd87bef2be7cbf9db1bdb133ddc9c804d76483cecf1ddc80eedd6e3b9b48cb5f",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "fd87bef2be7cbf9db1bdb133ddc9c804d76483cecf1ddc80eedd6e3b9b48cb5f.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "e3a1b56216f04ec718f20f2ff042b76e322b907fc4da6c1b36ab4adbf030aa19": {
+      "displayName": "AwslambdahackathonStack Template",
+      "source": {
+        "path": "AwslambdahackathonStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "e3a1b56216f04ec718f20f2ff042b76e322b907fc4da6c1b36ab4adbf030aa19.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

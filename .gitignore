@@ -1,8 +1,32 @@
-*.js
-!jest.config.js
-*.d.ts
-node_modules
+# --- Node / TypeScript -------------------------------------------------
+node_modules/
+dist/                 # tsc output (default outDir)
+package-lock.json     # if you use yarn/pnpm, swap accordingly
+npm-debug.log*
+yarn-error.log*
 
-# CDK asset staging directory
-.cdk.staging
-cdk.out
+# --- AWS CDK -----------------------------------------------------------
+cdk.out/              # synthesized CF templates & assets
+# If you ever use SAM or Serverless Framework alongside:
+.aws-sam/
+.serverless/
+
+# --- Lambda bundling (esbuild temp dirs) ------------------------------
+*.esbuild-*
+
+# --- Editor & OS cruft -------------------------------------------------
+.env*
+*.local
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Mac/Linux file metadata ------------------------------------------
+*.swp
+*~
+
+# --- JetBrains IDEs (WebStorm, IntelliJ, etc.) ------------------------
+*.iml
+# Optional: new Fleet IDE metadata
+.fleet/
