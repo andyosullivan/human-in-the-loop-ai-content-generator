@@ -1,5 +1,36 @@
 {
  "Resources": {
+  "ItemsTable5AAC2C46": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "itemId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "version",
+      "AttributeType": "N"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "itemId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "version",
+      "KeyType": "RANGE"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "AwslambdahackathonStack/ItemsTable/Resource"
+   }
+  },
   "HelloFnServiceRoleDA97FE56": {
    "Type": "AWS::IAM::Role",
    "Properties": {
@@ -34,6 +65,53 @@
     "aws:cdk:path": "AwslambdahackathonStack/HelloFn/ServiceRole/Resource"
    }
   },
+  "HelloFnServiceRoleDefaultPolicy23D39CE4": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "ItemsTable5AAC2C46",
+          "Arn"
+         ]
+        },
+        {
+         "Ref": "AWS::NoValue"
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "HelloFnServiceRoleDefaultPolicy23D39CE4",
+    "Roles": [
+     {
+      "Ref": "HelloFnServiceRoleDA97FE56"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "AwslambdahackathonStack/HelloFn/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
   "HelloFn7942DF23": {
    "Type": "AWS::Lambda::Function",
    "Properties": {
@@ -42,6 +120,13 @@
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
      },
      "S3Key": "fd87bef2be7cbf9db1bdb133ddc9c804d76483cecf1ddc80eedd6e3b9b48cb5f.zip"
+    },
+    "Environment": {
+     "Variables": {
+      "ITEMS_TABLE_NAME": {
+       "Ref": "ItemsTable5AAC2C46"
+      }
+     }
     },
     "Handler": "index.handler",
     "Role": {
@@ -54,6 +139,7 @@
     "Timeout": 10
    },
    "DependsOn": [
+    "HelloFnServiceRoleDefaultPolicy23D39CE4",
     "HelloFnServiceRoleDA97FE56"
    ],
    "Metadata": {
@@ -257,7 +343,7 @@
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/3VSy24bMQz8lugYyKrjnOqbnaJFgTQNnN4WhsFIzIa2VhJEqcZC2H8v9uU4h54kkkPNcKiVWi2X6u4GzrzQ5rSw9KrKSwJ9knDmQ7HQvBo4OG/wyOppOL5npxN5VxWBLsVWrMWtkCJRgz6nKYrZ9Ykp0t7M13dwxmIcok7+/4luLwkaVXbeYlUEMOcGzbYV6yJCJKcpgN1o7bObOUdM37AZBE4cogEHNZpnb0kTslhX5VOu3cQJu+/28uHN9U90ku8PwIyJ1aY/JN+rbdYnTFtgrPZy9EaVhzc3W9I3P2NsiJm866T1Navy6Osf0edQFWGn6xNM3oyEM6KTEKiGhGdoVdkhp02gStyKUdYYy28YrG8bdKkqwiDrSOEyrxQQaF4CJiD3AeeL62DMH//oa9Jgf5rekXn2D7R8SVDjQDGnriQPRblD9jlqHCwZdP7C9O5NVUScSvPeUwpjbUqQS1hHuBLuhyn4imRs6LoLz8gx7KMXQK7uYb9zCjl1sv+m6shf/q6W6u6rWt4cmWgxfUW1G89/0oaFc/MCAAA="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/5VTTU8bMRD9LfiIjBvCqbkFmlaoQNMkHKpVFE3sYTPgtVe2F7Sy9r9X9u6GVKiqerLnzfPMmw9PxXQyEZdn8OYvpHq50LQXcR1AvnB487uoWgOVVXsRN7DXWERWgwsUyJrv2LJZZAYqZDN2zjgLbZ2ua9Zx5q0Lf2U8JMaetCZT3luVoOX81265WO1Wi5+Pi/WGceawsq+gl1aTbNmMKfTB2ZZ1W37zZLKcjmuo9gp2xip89uIhH18bI5PAIjI0wbVjbqrQNmGw0LySs6ZCMyKuMYkyWLKXla4HMEqjy1bHY8f/J2635QSViCubuwfeNxWq69yY2pGRVIOeS2mbo5Cekx7Mcx1DYlaBgRJVbgihZ7Mi/oG1czdwt0kjKLWxyzHF2MYiDt4QQB5ujSaDRx87Z/9w5t4nabzHE3p8sLHJ8yHOR1ipdYCAqUl+kJQD9zE77q924D0GL+bp4P5KXDfyBcM1eCy2w9RFvHky47Dzc3QVeU/WdFzb0ot4Z8tvzjZ1EZkerg/jNvYpR0bHoaYSAr5BK+IKfZjXlBXninubf8Fa2zbpLmJaSOmoPo6IM6hpXCYMQOad7sft6cdyZ0uSoG/VafXvbL4OUGJOMUInkrOTr9DbxknMLck67zEcrCoic4Nr3N8Q6t43AGQClg5OhNtchT9J0j/oumOePOmcJ88kiSBTJuqPJtRN6Hj6hOLZf3qdTsTlZzE5e/ZEF8O3Eqv+/A2JqmsEcQQAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "AwslambdahackathonStack/CDKMetadata/Default"

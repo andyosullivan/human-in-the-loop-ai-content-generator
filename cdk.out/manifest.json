@@ -18,7 +18,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/e3a1b56216f04ec718f20f2ff042b76e322b907fc4da6c1b36ab4adbf030aa19.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/5baeedbb2de5696c53290994a230afb96a6ab870ca07155be43bd468c7ad653b.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -34,22 +34,57 @@
         "AwslambdahackathonStack.assets"
       ],
       "metadata": {
+        "/AwslambdahackathonStack/ItemsTable": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": {
+              "partitionKey": {
+                "name": "*",
+                "type": "S"
+              },
+              "sortKey": {
+                "name": "*",
+                "type": "N"
+              },
+              "billingMode": "PAY_PER_REQUEST",
+              "removalPolicy": "destroy"
+            }
+          }
+        ],
+        "/AwslambdahackathonStack/ItemsTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ItemsTable5AAC2C46"
+          }
+        ],
+        "/AwslambdahackathonStack/ItemsTable/ScalingRole": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": "*"
+          }
+        ],
         "/AwslambdahackathonStack/HelloFn": [
           {
             "type": "aws:cdk:analytics:construct",
             "data": {
               "entry": "*",
               "timeout": "*",
+              "environment": "*",
               "runtime": "*",
               "code": "*",
               "handler": "*"
             }
           },
           {
+            "type": "aws:cdk:analytics:method",
+            "data": {}
+          },
+          {
             "type": "aws:cdk:analytics:construct",
             "data": {
               "entry": "*",
-              "timeout": "*"
+              "timeout": "*",
+              "environment": "*"
             }
           }
         ],
@@ -67,6 +102,30 @@
                 }
               ]
             }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "addToPrincipalPolicy": [
+                {}
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "attachInlinePolicy": [
+                "*"
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "attachInlinePolicy": [
+                "*"
+              ]
+            }
           }
         ],
         "/AwslambdahackathonStack/HelloFn/ServiceRole/ImportServiceRole": [
@@ -79,6 +138,42 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "HelloFnServiceRoleDA97FE56"
+          }
+        ],
+        "/AwslambdahackathonStack/HelloFn/ServiceRole/DefaultPolicy": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": "*"
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "attachToRole": [
+                "*"
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "attachToRole": [
+                "*"
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "addStatements": [
+                {}
+              ]
+            }
+          }
+        ],
+        "/AwslambdahackathonStack/HelloFn/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HelloFnServiceRoleDefaultPolicy23D39CE4"
           }
         ],
         "/AwslambdahackathonStack/HelloFn/Resource": [

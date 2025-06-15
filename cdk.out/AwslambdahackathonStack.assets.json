@@ -15,7 +15,7 @@
         }
       }
     },
-    "e3a1b56216f04ec718f20f2ff042b76e322b907fc4da6c1b36ab4adbf030aa19": {
+    "5baeedbb2de5696c53290994a230afb96a6ab870ca07155be43bd468c7ad653b": {
       "displayName": "AwslambdahackathonStack Template",
       "source": {
         "path": "AwslambdahackathonStack.template.json",
@@ -24,7 +24,7 @@
       "destinations": {
         "current_account-current_region": {
           "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
-          "objectKey": "e3a1b56216f04ec718f20f2ff042b76e322b907fc4da6c1b36ab4adbf030aa19.json",
+          "objectKey": "5baeedbb2de5696c53290994a230afb96a6ab870ca07155be43bd468c7ad653b.json",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
         }
       }
