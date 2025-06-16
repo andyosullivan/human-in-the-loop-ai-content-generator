@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import SpecPreview from "./SpecPreview";
 
 const API_BASE = "https://4yesf45xn7.execute-api.eu-west-1.amazonaws.com/prod";
 
@@ -107,9 +108,13 @@ export default function ReviewPage() {
               </button>
             </span>
                     </div>
-                    <pre style={{ background: "#f9f9f9", borderRadius: 4, marginTop: 12, fontSize: 13, padding: 10, overflowX: "auto" }}>
-            {JSON.stringify(item.spec, null, 2)}
-          </pre>
+                    <SpecPreview type={item.type} spec={item.spec} />
+                    <details>
+                        <summary>Raw spec (debug)</summary>
+                        <pre style={{ background: "#f9f9f9", borderRadius: 4, marginTop: 12, fontSize: 13, padding: 10, overflowX: "auto" }}>
+    {JSON.stringify(item.spec, null, 2)}
+  </pre>
+                    </details>
                 </div>
             ))}
         </div>
