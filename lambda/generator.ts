@@ -133,6 +133,11 @@ If you do not know a field, fill it with a plausible placeholder.
     /* 7️⃣  Return result to caller */
     return {
         statusCode: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*",   // allow all domains
+            "Access-Control-Allow-Headers": "*",  // allow any headers
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET" // allow these methods
+        },
         body: JSON.stringify({ ok: true, itemId })
     };
 };
