@@ -191,7 +191,7 @@ If the type is not recognized, return an object with "status": "REJECTED" and a 
             // Make a nice puzzle prompt:
             const theme = item?.spec?.theme || "colorful puzzle for a game";
             const pieces = item?.spec?.pieces || 24;
-            const promptText = `A bright, fun, detailed illustration for a ${pieces}-piece jigsaw puzzle, theme: ${theme}, for a kids/family game.`;
+            const promptText = `A bright, fun, detailed illustration of a cute animal for a ${pieces}-piece jigsaw puzzle, for a kids/family game. Make sure there are NO words or text in the image.`;
             // This call may take ~10 seconds!
             const imgUrl = await generateAndStoreJigsawImage(promptText, itemId);
             item.spec.imageUrl = imgUrl;
