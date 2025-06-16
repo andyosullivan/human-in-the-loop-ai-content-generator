@@ -100,6 +100,44 @@ export class AwslambdahackathonStack extends Stack {
     });
     itemsTable.grantReadWriteData(generatorFn);
 
+    // Create the S3 bucket for puzzle images
+    const puzzleImagesBucket = new Bucket(this, "PuzzleImagesBucket", {
+      bucketName: `${this.stackName.toLowerCase()}-puzzle-images`, // change if needed
+      publicReadAccess: true, // public-read for demo/dev; use signed URLs in prod!
+      blockPublicAccess: new BlockPublicAccess({
+        blockPublicAcls: false,
+        blockPublicPolicy: false,
+        ignorePublicAcls: false,
+        restrictPublicBuckets: false,
+      }),
+      removalPolicy: RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      cors: [
+        {
+          allowedMethods: [HttpMethods.GET],
+          allowedOrigins: ["*"],
+          allowedHeaders: ["*"],
+        },
+      ]
+    });
+
+    puzzleImagesBucket.addToResourcePolicy(
+        new iam.PolicyStatement({
+          actions: ['s3:GetObject'],
+          resources: [puzzleImagesBucket.arnForObjects('*')],
+          principals: [new iam.AnyPrincipal()],
+          effect: iam.Effect.ALLOW,
+        })
+    );
+
+// Grant write/upload permissions to the generator Lambda
+    puzzleImagesBucket.grantPut(generatorFn); // <-- assuming generatorFn is your image-generating lambda
+
+// Pass bucket name as an environment variable to the Lambda
+    generatorFn.addEnvironment("PUZZLE_IMAGES_BUCKET", puzzleImagesBucket.bucketName);
+    generatorFn.addEnvironment("BEDROCK_IMAGE_MODEL_ID", "amazon.titan-image-generator-v1");
+
+
     const generatorTask = new LambdaInvoke(this, 'InvokeGenerator', {
       lambdaFunction: generatorFn,
       payload: TaskInput.fromObject({

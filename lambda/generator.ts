@@ -1,16 +1,22 @@
 // lambda/generator.ts
 import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
+import { Buffer } from "buffer";
 
 // ----- config from env -----
 const TABLE_NAME = process.env.ITEMS_TABLE_NAME!;
 const MODEL_ID = process.env.BEDROCK_MODEL_ID!; // e.g. "anthropic.claude-3-sonnet-20240229-v1:0"
+const IMAGE_MODEL_ID = process.env.BEDROCK_IMAGE_MODEL_ID || "amazon.titan-image-generator-v1"; // <-- add this env
 const REGION = process.env.AWS_REGION || "eu-west-1";
+const PUZZLE_IMAGES_BUCKET = process.env.PUZZLE_IMAGES_BUCKET!;
 
 // ----- one-time clients -----
 const bedrock = new BedrockRuntimeClient({ region: REGION });
 const ddb = new DynamoDBClient({ region: REGION });
+const s3 = new S3Client({ region: REGION });
+
 
 // ----- schema (trimmed – keep keys in sync with your latest) -----
 const INTERACTIVE_ITEM_SCHEMA = /* json */ `
@@ -32,6 +38,55 @@ You must return JSON that validates against this schema:
 
 // -- basic utility ----------------------------------------------------
 function nowIso() { return new Date().toISOString(); }
+
+// -- Generate an image with Bedrock and upload to S3 --
+async function generateAndStoreJigsawImage(promptText: string, itemId: string): Promise<string> {
+    // 1. Call Bedrock Titan image model
+    const imageRequest = {
+        modelId: IMAGE_MODEL_ID,
+        contentType: "application/json",
+        accept: "application/json",
+        body: JSON.stringify({
+            taskType: "TEXT_IMAGE",
+            textToImageParams: { text: promptText },
+            imageGenerationConfig: {
+                numberOfImages: 1,
+                quality: "standard",     // You can use "premium" if you have access
+                height: 512,
+                width: 512,
+                cfgScale: 8.0,
+                seed: Math.floor(Math.random() * 999999999)
+            }
+        })
+    };
+
+    const imgResponse = await bedrock.send(new InvokeModelCommand(imageRequest));
+    const rawImg = new TextDecoder().decode(imgResponse.body);
+    const imgPayload = JSON.parse(rawImg);
+
+    // Titan returns images[0].base64
+    const base64Img = Array.isArray(imgPayload.images) ? imgPayload.images[0] : undefined;
+    if (!base64Img) {
+        console.error("Titan did not return an image. Full payload:", imgPayload);
+        throw new Error("No image returned from Titan Image Generator");
+    }
+
+    // 2. Upload to S3
+    const buffer = Buffer.from(base64Img, "base64");
+    const s3Key = `jigsaws/${itemId}.png`;
+
+    await s3.send(new PutObjectCommand({
+        Bucket: PUZZLE_IMAGES_BUCKET,
+        Key: s3Key,
+        Body: buffer,
+        ContentType: "image/png"
+        // No ACL!
+    }));
+
+    // 3. Return the public URL
+    return `https://${PUZZLE_IMAGES_BUCKET}.s3.${REGION}.amazonaws.com/${s3Key}`;
+}
+
 
 // -- Lambda entry -----------------------------------------------------
 export const handler = async (event: any = {}): Promise<any> => {
@@ -87,7 +142,6 @@ If the type is not recognized, return an object with "status": "REJECTED" and a 
 `;
 
 
-    /* Bedrock Anthropic Claude 3.5/3 Sonnet message format */
     const anthropicPayload = {
         anthropic_version: "bedrock-2023-05-31",
         max_tokens: 1024,
@@ -106,15 +160,11 @@ If the type is not recognized, return an object with "status": "REJECTED" and a 
         body: JSON.stringify(anthropicPayload)
     };
 
-    /* Call Bedrock */
+    // Call Bedrock for the JSON spec
     const response = await bedrock.send(new InvokeModelCommand(body));
     const raw = new TextDecoder().decode(response.body);
 
-
-
-    // Strip out any preamble if present (Claude sometimes returns extra text)
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
+    // Parse Claude's response (as before)
     let item;
     try {
         const outer = JSON.parse(raw);
@@ -128,15 +178,29 @@ If the type is not recognized, return an object with "status": "REJECTED" and a 
         };
     }
 
-    console.log("RAW Bedrock output:", raw);
-    console.log("PARSED Bedrock item:", item);
-
-    /* Post-process: add id, timestamps, status */
+    // Assign an ID, etc
     const itemId = `item_${uuidv4().replace(/-/g, "").slice(0, 8)}`;
     item.id = itemId;
     item.version = 1;
     item.status = "PENDING";
     item.createdAt = nowIso();
+
+    // If jigsaw, generate and upload AI art!
+    if (item.type === "jigsaw") {
+        try {
+            // Make a nice puzzle prompt:
+            const theme = item?.spec?.theme || "colorful puzzle for a game";
+            const pieces = item?.spec?.pieces || 24;
+            const promptText = `A bright, fun, detailed illustration for a ${pieces}-piece jigsaw puzzle, theme: ${theme}, for a kids/family game.`;
+            // This call may take ~10 seconds!
+            const imgUrl = await generateAndStoreJigsawImage(promptText, itemId);
+            item.spec.imageUrl = imgUrl;
+        } catch (err) {
+            console.error("Failed to generate/upload jigsaw image:", err);
+            // fallback to placeholder
+            item.spec.imageUrl = "https://picsum.photos/400/300";
+        }
+    }
 
     /* Store in DynamoDB */
     if (!item || !item.type || !item.lang || !item.spec) {
