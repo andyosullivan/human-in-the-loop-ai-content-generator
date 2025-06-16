@@ -18,7 +18,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/5baeedbb2de5696c53290994a230afb96a6ab870ca07155be43bd468c7ad653b.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/3ecf5d9936640a69d27f1d78e490af6060f1dff98bd7db273c0013df0ddaec61.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -196,6 +196,162 @@
             "data": "HelloFnLogGroup1712C682"
           }
         ],
+        "/AwslambdahackathonStack/GeneratorFn": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": {
+              "entry": "*",
+              "runtime": "*",
+              "timeout": "*",
+              "memorySize": "*",
+              "environment": "*",
+              "code": "*",
+              "handler": "*"
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {}
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {}
+          },
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": {
+              "entry": "*",
+              "runtime": "*",
+              "timeout": "*",
+              "memorySize": "*",
+              "environment": "*"
+            }
+          }
+        ],
+        "/AwslambdahackathonStack/GeneratorFn/ServiceRole": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": {
+              "assumedBy": {
+                "principalAccount": "*",
+                "assumeRoleAction": "*"
+              },
+              "managedPolicies": [
+                {
+                  "managedPolicyArn": "*"
+                }
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "addToPrincipalPolicy": [
+                {}
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "attachInlinePolicy": [
+                "*"
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "attachInlinePolicy": [
+                "*"
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "addToPrincipalPolicy": [
+                {}
+              ]
+            }
+          }
+        ],
+        "/AwslambdahackathonStack/GeneratorFn/ServiceRole/ImportServiceRole": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": "*"
+          }
+        ],
+        "/AwslambdahackathonStack/GeneratorFn/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GeneratorFnServiceRole438F20C3"
+          }
+        ],
+        "/AwslambdahackathonStack/GeneratorFn/ServiceRole/DefaultPolicy": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": "*"
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "attachToRole": [
+                "*"
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "attachToRole": [
+                "*"
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "addStatements": [
+                {}
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "addStatements": [
+                {}
+              ]
+            }
+          }
+        ],
+        "/AwslambdahackathonStack/GeneratorFn/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GeneratorFnServiceRoleDefaultPolicy198AF8C0"
+          }
+        ],
+        "/AwslambdahackathonStack/GeneratorFn/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GeneratorFnB962270F"
+          }
+        ],
+        "/AwslambdahackathonStack/GeneratorFn/LogGroup": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": {
+              "logGroupName": "*"
+            }
+          }
+        ],
+        "/AwslambdahackathonStack/GeneratorFn/LogGroup/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "GeneratorFnLogGroup09B49EA4"
+          }
+        ],
         "/AwslambdahackathonStack/HelloApi": [
           {
             "type": "aws:cdk:analytics:construct",
@@ -224,12 +380,28 @@
                 {}
               ]
             }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "addToLogicalId": [
+                {}
+              ]
+            }
+          },
+          {
+            "type": "aws:cdk:analytics:method",
+            "data": {
+              "addToLogicalId": [
+                {}
+              ]
+            }
           }
         ],
         "/AwslambdahackathonStack/HelloApi/Deployment/Resource": [
           {
             "type": "aws:cdk:logicalId",
-            "data": "HelloApiDeployment95582808e8833053d5c27ea62e221508f6e7a6a3"
+            "data": "HelloApiDeployment95582808a8188c65a2f643a1730e28d8bcc9adf8"
           }
         ],
         "/AwslambdahackathonStack/HelloApi/DeploymentStage.prod": [
@@ -285,6 +457,50 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "HelloApiGETCD7CC03D"
+          }
+        ],
+        "/AwslambdahackathonStack/HelloApi/Default/generate": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": {
+              "parent": "*",
+              "pathPart": "*"
+            }
+          }
+        ],
+        "/AwslambdahackathonStack/HelloApi/Default/generate/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HelloApigenerate2AEDF5B2"
+          }
+        ],
+        "/AwslambdahackathonStack/HelloApi/Default/generate/POST": [
+          {
+            "type": "aws:cdk:analytics:construct",
+            "data": {
+              "resource": "*",
+              "httpMethod": "*",
+              "integration": "*",
+              "options": "*"
+            }
+          }
+        ],
+        "/AwslambdahackathonStack/HelloApi/Default/generate/POST/ApiPermission.AwslambdahackathonStackHelloApi32B1FB07.POST..generate": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HelloApigeneratePOSTApiPermissionAwslambdahackathonStackHelloApi32B1FB07POSTgenerate82E9D454"
+          }
+        ],
+        "/AwslambdahackathonStack/HelloApi/Default/generate/POST/ApiPermission.Test.AwslambdahackathonStackHelloApi32B1FB07.POST..generate": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HelloApigeneratePOSTApiPermissionTestAwslambdahackathonStackHelloApi32B1FB07POSTgenerate79532919"
+          }
+        ],
+        "/AwslambdahackathonStack/HelloApi/Default/generate/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "HelloApigeneratePOST801D8CAB"
           }
         ],
         "/AwslambdahackathonStack/CDKMetadata/Default": [
