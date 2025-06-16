@@ -35,28 +35,59 @@ function nowIso() { return new Date().toISOString(); }
 
 // -- Lambda entry -----------------------------------------------------
 export const handler = async (event: any = {}): Promise<any> => {
-    /* 1️⃣  Choose the item type & language from the request or default */
+    /* Choose the item type & language from the request or default */
     const requestedType = event.type || "word_search";
     const requestedLang = event.lang || "en";
 
-    /* 2️⃣  Craft a prompt */
+    /* prompt */
     const prompt = `
-You are an expert puzzle generator. Return ONLY JSON that validates against this schema:
+You are an expert puzzle and game JSON generator.
 
+**Return ONLY a single JSON object that validates against this schema:**
 ${INTERACTIVE_ITEM_SCHEMA}
 
-Prompt: Produce a new interactive item.
-  type   = "${requestedType}",
-  lang   = "${requestedLang}",
-  theme  = "hackathon-demo",
-  difficulty = "easy".
+**Type:** "${requestedType}"
+**Language:** "${requestedLang}"
+**Theme:** "hackathon-demo"
+**Difficulty:** "easy"
 
-Return only JSON, without \`\`\` fences.
-Return only JSON. Do not include explanations, markdown, or any text outside the JSON object.
-If you do not know a field, fill it with a plausible placeholder.
+For each 'type', the "spec" object should follow these patterns:
+
+- **word_search:**
+  - "grid": a 2D array of letters (9–12 rows of 9–12 uppercase letters each)
+  - "words": a list of at least 6 hidden words related to the theme
+
+- **quiz_mcq:**
+  - "questions": an array of at least 5 objects. Each object must have:
+    - "question": string
+    - "choices": array of 4 strings
+    - "answer": integer (the index of the correct answer in "choices")
+
+- **memory_match:**
+  - "pairs": an array of at least 6 objects, each with:
+    - "term": string (e.g. a word or image)
+    - "match": string (the correct pair for "term")
+
+- **space_shooter:**
+  - "level": integer (difficulty level, 1–5)
+  - "enemyTypes": array of at least 3 enemy names as strings
+  - "playerAbilities": array of at least 2 abilities as strings
+
+- **jigsaw:**
+  - "imageUrl": a plausible image URL string (use a placeholder like "https://example.com/jigsaw1.png")
+  - "pieces": integer (number of pieces, 12–48)
+
+**Strict instructions:**
+- Return ONLY the JSON, no markdown, no explanations, no \`\`\` fences, no trailing text.
+- Fill in ALL required fields in the "spec" object for the given type—never leave arrays empty or omit fields.
+- Use plausible and creative content. If a field is not known, create a realistic placeholder value.
+- The JSON **must** be valid and match the required schema and patterns above.
+
+If the type is not recognized, return an object with "status": "REJECTED" and a message in "spec".
 `;
 
-    /* 3️⃣  Bedrock Anthropic Claude 3.5/3 Sonnet message format */
+
+    /* Bedrock Anthropic Claude 3.5/3 Sonnet message format */
     const anthropicPayload = {
         anthropic_version: "bedrock-2023-05-31",
         max_tokens: 1024,
@@ -75,7 +106,7 @@ If you do not know a field, fill it with a plausible placeholder.
         body: JSON.stringify(anthropicPayload)
     };
 
-    /* 4️⃣  Call Bedrock */
+    /* Call Bedrock */
     const response = await bedrock.send(new InvokeModelCommand(body));
     const raw = new TextDecoder().decode(response.body);
 
@@ -100,14 +131,14 @@ If you do not know a field, fill it with a plausible placeholder.
     console.log("RAW Bedrock output:", raw);
     console.log("PARSED Bedrock item:", item);
 
-    /* 5️⃣  Post-process: add id, timestamps, status */
+    /* Post-process: add id, timestamps, status */
     const itemId = `item_${uuidv4().replace(/-/g, "").slice(0, 8)}`;
     item.id = itemId;
     item.version = 1;
     item.status = "PENDING";
     item.createdAt = nowIso();
 
-    /* 6️⃣  Store in DynamoDB */
+    /* Store in DynamoDB */
     if (!item || !item.type || !item.lang || !item.spec) {
         console.error("Incomplete item from Bedrock:", item);
         return {
@@ -130,7 +161,7 @@ If you do not know a field, fill it with a plausible placeholder.
         }
     }));
 
-    /* 7️⃣  Return result to caller */
+    /* Return result to caller */
     return {
         statusCode: 200,
         headers: {

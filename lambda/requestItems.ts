@@ -2,12 +2,28 @@ import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
 
 const sfn = new SFNClient();
 
+const ITEM_TYPES = [
+    "quiz_mcq",
+    "word_search",
+    "memory_match",
+    "space_shooter",
+    "jigsaw"
+];
+
 export const handler = async (event: any = {}) => {
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body || {};
-    const { count = 1, type = "word_search", lang = "en" } = body;
+    const { count = 1, type, lang = "en" } = body;
 
-    // Build the items array
-    const items = Array.from({ length: count }, () => ({ type, lang }));
+// Helper to pick a random type
+    function randomType() {
+        return ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+    }
+
+// Build the items array
+    const items = Array.from({ length: count }, () => ({
+        type: randomType(),
+        lang
+    }));
 
     const stateMachineArn = process.env.STATE_MACHINE_ARN!;
     const input = JSON.stringify({ items });

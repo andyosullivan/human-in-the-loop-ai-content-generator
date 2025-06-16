@@ -25,7 +25,7 @@ export default function ReviewPage() {
             const res = await fetch(`${API_BASE}/request-items`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ count: requestCount, type: "word_search", lang: "en" })
+                body: JSON.stringify({ count: requestCount, lang: "en" })
             });
             const data = await res.json();
             alert("Request submitted! StepFunction execution started: " + data.executionArn);
