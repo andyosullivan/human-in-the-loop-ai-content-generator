@@ -188,7 +188,15 @@ export class AwslambdahackathonStack extends Stack {
 
     stepFn.grantStartExecution(requestItemsFn);
 
-    // 3️⃣ API Gateway
+    const itemStatsFn = new NodejsFunction(this, "ItemStatsFn", {
+      entry: "lambda/itemStats.ts",
+      environment: {
+        ITEMS_TABLE_NAME: this.itemsTable.tableName,
+      },
+    });
+    this.itemsTable.grantReadData(itemStatsFn);
+
+    // API Gateway
     const api = new RestApi(this, 'HelloApi');
     api.root.addMethod('GET', new LambdaIntegration(handler));
     const generateResource = api.root.addResource('generate');
@@ -203,9 +211,12 @@ export class AwslambdahackathonStack extends Stack {
     const requestItemsResource = api.root.addResource('request-items');
     requestItemsResource.addMethod('POST', new LambdaIntegration(requestItemsFn));
     addCorsOptions(requestItemsResource);
+    const itemStatsResource = api.root.addResource('item-stats');
+    itemStatsResource.addMethod('GET', new LambdaIntegration(itemStatsFn));
+    addCorsOptions(itemStatsResource);
 
 
-    // 4️⃣ S3 static site bucket
+    //  S3 static site bucket
     const siteBucket = new Bucket(this, "SiteBucket", {
       websiteIndexDocument: "index.html",
       publicReadAccess: true,
