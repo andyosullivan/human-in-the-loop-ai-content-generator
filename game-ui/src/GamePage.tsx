@@ -19,6 +19,32 @@ export default function GamePage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    function renderWordSearchGrid(spec: any) {
+        if (!Array.isArray(spec.grid)) return <div>No grid data.</div>;
+        const grid = spec.grid.map((row: string | string[]) =>
+            Array.isArray(row) ? row : String(row).split("")
+        );
+
+        return (
+            <table style={{ borderCollapse: "collapse", margin: "1rem 0" }}>
+                <tbody>
+                {grid.map((row: string[], i: number) => (
+                    <tr key={i}>
+                        {row.map((cell, j) => (
+                            <td
+                                key={j}
+                                style={{ border: "1px solid #ccc", padding: "6px 10px", fontFamily: "monospace", fontWeight: 600 }}
+                            >
+                                {cell}
+                            </td>
+                        ))}
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        );
+    }
+
     const fetchRandomGame = async () => {
         setLoading(true);
         setError(null);
@@ -44,32 +70,7 @@ export default function GamePage() {
     function renderGameBody() {
         if (!game) return null;
         if (game.type === "word_search") {
-            return (
-                <div>
-                    <h3>Word Search</h3>
-                    <table style={{ margin: "auto" }}>
-                        <tbody>
-                        {(game.spec.grid || []).map((row: string, i: number) => (
-                            <tr key={i}>
-                                {row.split("").map((ch: string, j: number) => (
-                                    <td key={j} style={{
-                                        border: "1px solid #ccc",
-                                        padding: 4,
-                                        width: 24,
-                                        height: 24,
-                                        textAlign: "center",
-                                        fontSize: 20
-                                    }}>{ch}</td>
-                                ))}
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-                    <div style={{ marginTop: 16 }}>
-                        <b>Words:</b> {Array.isArray(game.spec.words) ? game.spec.words.join(", ") : ""}
-                    </div>
-                </div>
-            );
+            return renderWordSearchGrid(game.spec);
         }
 
         if (game.type === "quiz_mcq") {
