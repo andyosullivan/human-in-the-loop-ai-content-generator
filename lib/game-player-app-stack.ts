@@ -1,16 +1,69 @@
 import { Stack, StackProps, Duration, RemovalPolicy } from "aws-cdk-lib";
 import { Construct } from "constructs";
-import { Bucket, BlockPublicAccess } from "aws-cdk-lib/aws-s3";
+import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { LambdaIntegration, RestApi, Resource, MockIntegration, PassthroughBehavior } from "aws-cdk-lib/aws-apigateway";
+import { Table, AttributeType, BillingMode } from "aws-cdk-lib/aws-dynamodb";
+import { Bucket, HttpMethods } from "aws-cdk-lib/aws-s3";
+import { BlockPublicAccess } from "aws-cdk-lib/aws-s3";
 import { Distribution, OriginAccessIdentity, ViewerProtocolPolicy } from "aws-cdk-lib/aws-cloudfront";
 import { S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import { BucketDeployment, Source } from "aws-cdk-lib/aws-s3-deployment";
 import { CfnOutput } from "aws-cdk-lib";
+import {Runtime} from "aws-cdk-lib/aws-lambda";
+
+export interface GamePlayerAppStackProps extends StackProps {
+    itemsTable: Table;
+}
 
 export class GamePlayerAppStack extends Stack {
     public readonly gameSiteUrl: string;
 
-    constructor(scope: Construct, id: string, props?: StackProps) {
+    constructor(scope: Construct, id: string, props: GamePlayerAppStackProps) {
         super(scope, id, props);
+
+        const itemsTable = props.itemsTable;
+
+        const randomApprovedFn = new NodejsFunction(this, "RandomApprovedFn", {
+            entry: "lambda/randomApproved.ts", // Lambda code shown in my previous message!
+            runtime: Runtime.NODEJS_20_X,
+            timeout: Duration.seconds(10),
+            environment: {
+                ITEMS_TABLE_NAME: itemsTable.tableName
+            }
+        });
+        itemsTable.grantReadData(randomApprovedFn);
+
+        // --- 2. API Gateway ---
+        const api = new RestApi(this, "GamePlayerApi");
+        const randomApprovedResource = api.root.addResource("random-approved");
+        randomApprovedResource.addMethod("GET", new LambdaIntegration(randomApprovedFn));
+
+        // CORS preflight
+        randomApprovedResource.addMethod(
+            "OPTIONS",
+            new MockIntegration({
+                integrationResponses: [{
+                    statusCode: "200",
+                    responseParameters: {
+                        "method.response.header.Access-Control-Allow-Headers": "'*'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'",
+                    }
+                }],
+                passthroughBehavior: PassthroughBehavior.NEVER,
+                requestTemplates: { "application/json": "{\"statusCode\": 200}" }
+            }),
+            {
+                methodResponses: [{
+                    statusCode: "200",
+                    responseParameters: {
+                        "method.response.header.Access-Control-Allow-Headers": true,
+                        "method.response.header.Access-Control-Allow-Methods": true,
+                        "method.response.header.Access-Control-Allow-Origin": true,
+                    }
+                }]
+            }
+        );
 
         // S3 Bucket for the game player app
         const gameSiteBucket = new Bucket(this, "GameSiteBucket", {

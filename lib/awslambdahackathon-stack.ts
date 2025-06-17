@@ -22,6 +22,7 @@ import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks';
 
 
 export class AwslambdahackathonStack extends Stack {
+  public readonly itemsTable: Table;
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -53,15 +54,16 @@ export class AwslambdahackathonStack extends Stack {
     }
 
 
-    // 1️⃣ DynamoDB table
-    const itemsTable = new Table(this, 'ItemsTable', {
+    // DynamoDB table
+
+    this.itemsTable = new Table(this, 'ItemsTable', {
       partitionKey: { name: 'itemId', type: AttributeType.STRING },
       sortKey:      { name: 'version', type: AttributeType.NUMBER },
       billingMode:  BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    itemsTable.addGlobalSecondaryIndex({
+    this.itemsTable.addGlobalSecondaryIndex({
       indexName: "StatusIndex",
       partitionKey: { name: "status", type: AttributeType.STRING },
       sortKey: { name: "createdAt", type: AttributeType.STRING }
@@ -73,20 +75,20 @@ export class AwslambdahackathonStack extends Stack {
       timeout: Duration.seconds(10),
       memorySize: 256,
       environment: {
-        ITEMS_TABLE_NAME: itemsTable.tableName
+        ITEMS_TABLE_NAME: this.itemsTable.tableName
       }
     });
-    itemsTable.grantReadData(listPendingFn);
+    this.itemsTable.grantReadData(listPendingFn);
 
     // 2️⃣ Lambdas
     const handler = new NodejsFunction(this, 'HelloFn', {
       entry: 'lambda/hello.ts',
       timeout: Duration.seconds(10),
       environment: {
-        ITEMS_TABLE_NAME: itemsTable.tableName,
+        ITEMS_TABLE_NAME: this.itemsTable.tableName,
       },
     });
-    itemsTable.grantReadWriteData(handler);
+    this.itemsTable.grantReadWriteData(handler);
 
     const generatorFn = new NodejsFunction(this, 'GeneratorFn', {
       entry: 'lambda/generator.ts',
@@ -94,11 +96,11 @@ export class AwslambdahackathonStack extends Stack {
       timeout: Duration.seconds(30),
       memorySize: 512,
       environment: {
-        ITEMS_TABLE_NAME: itemsTable.tableName,
+        ITEMS_TABLE_NAME: this.itemsTable.tableName,
         BEDROCK_MODEL_ID: "anthropic.claude-3-sonnet-20240229-v1:0"
       },
     });
-    itemsTable.grantReadWriteData(generatorFn);
+    this.itemsTable.grantReadWriteData(generatorFn);
 
     // Create the S3 bucket for puzzle images
     const puzzleImagesBucket = new Bucket(this, "PuzzleImagesBucket", {
@@ -164,10 +166,10 @@ export class AwslambdahackathonStack extends Stack {
       timeout: Duration.seconds(10),
       memorySize: 256,
       environment: {
-        ITEMS_TABLE_NAME: itemsTable.tableName,
+        ITEMS_TABLE_NAME: this.itemsTable.tableName,
       }
     });
-    itemsTable.grantReadWriteData(reviewerFn);
+    this.itemsTable.grantReadWriteData(reviewerFn);
 
     generatorFn.addToRolePolicy(new iam.PolicyStatement({
       actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],

@@ -1,3 +1,2 @@
 import React from 'react';
-declare function App(): React.JSX.Element;
-export default App;
+export default function App(): React.JSX.Element;

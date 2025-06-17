@@ -1,26 +1,36 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import GamePage from "./GamePage";
 
-function App() {
+function Home() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+      <div style={{ textAlign: "center", padding: 40 }}>
+        <h1>Welcome to the AI Game Playground 🎲</h1>
+        <Link to="/game">
+          <button style={{
+            background: "#4f7cff",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "16px 36px",
+            fontSize: 22,
+            cursor: "pointer",
+            marginTop: 40
+          }}>
+            Play a Random Game!
+          </button>
+        </Link>
+      </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/game" element={<GamePage />} />
+        </Routes>
+      </Router>
+  );
+}

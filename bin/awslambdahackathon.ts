@@ -5,10 +5,12 @@ import { GamePlayerAppStack } from '../lib/game-player-app-stack';  // <-- Impor
 
 const app = new cdk.App();
 
-new AwslambdahackathonStack(app, 'AwslambdahackathonStack', {
-    // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+const mainStack = new AwslambdahackathonStack(app, 'AwslambdahackathonStack', {
+    env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 });
 
 new GamePlayerAppStack(app, 'GamePlayerAppStack', {
-    // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+    itemsTable: mainStack.itemsTable, // This is now recognized!
+    env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 });
+
