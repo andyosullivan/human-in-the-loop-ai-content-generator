@@ -5,20 +5,23 @@ const ddb = new DynamoDBClient({});
 const TABLE_NAME = process.env.ITEMS_TABLE_NAME!;
 
 export const handler = async () => {
-    // Alias both reserved words: type and status
     const res = await ddb.send(new ScanCommand({
         TableName: TABLE_NAME,
         ProjectionExpression: "#ty, #st",
         ExpressionAttributeNames: { "#ty": "type", "#st": "status" }
     }));
 
-    const stats: Record<string, number> = {};
+    // Aggregate
+    const stats: Record<string, Record<string, number>> = {};
     let total = 0;
     (res.Items || []).forEach((item: any) => {
-        // Access the aliases
-        const type = item["#ty"]?.S || item.type?.S || "unknown";
-        const status = item["#st"]?.S || item.status?.S || "unknown";
-        stats[`${type} (${status})`] = (stats[`${type} (${status})`] || 0) + 1;
+        const type = item.type?.S || item["#ty"]?.S || "unknown";
+        const status = item.status?.S || item["#st"]?.S || "unknown";
+        stats[type] = stats[type] || { PENDING: 0, APPROVED: 0, REJECTED: 0, TOTAL: 0 };
+        if (status === "PENDING" || status === "APPROVED" || status === "REJECTED") {
+            stats[type][status] += 1;
+        }
+        stats[type].TOTAL += 1;
         total += 1;
     });
 

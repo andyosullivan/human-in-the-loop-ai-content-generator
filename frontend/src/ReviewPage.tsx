@@ -3,19 +3,19 @@ import SpecPreview from "./SpecPreview";
 
 const API_BASE = "https://4yesf45xn7.execute-api.eu-west-1.amazonaws.com/prod";
 
+// --- Types
+type Status = "PENDING" | "APPROVED" | "REJECTED";
+type ItemTypeStats = { PENDING?: number; APPROVED?: number; REJECTED?: number; TOTAL?: number };
+type ByType = Record<string, ItemTypeStats>;
+
 type Item = {
     itemId: string;
     version: number;
     type: string;
-    status: string;
+    status: Status;
     lang: string;
     createdAt: string;
     spec: any;
-};
-
-type ItemStats = {
-    total: number;
-    byType: Record<string, number>;
 };
 
 export default function ReviewPage() {
@@ -24,25 +24,12 @@ export default function ReviewPage() {
     const [error, setError] = useState<string | null>(null);
     const [requestCount, setRequestCount] = useState(1);
     const [requesting, setRequesting] = useState(false);
-    const [stats, setStats] = useState<ItemStats | null>(null);
-    const [statsLoading, setStatsLoading] = useState(false);
 
-    const handleRequestItems = async () => {
-        setRequesting(true);
-        try {
-            const res = await fetch(`${API_BASE}/request-items`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ count: requestCount, lang: "en" })
-            });
-            const data = await res.json();
-            alert("Request submitted! StepFunction execution started: " + data.executionArn);
-        } catch (e) {
-            alert("Failed to request items: " + e);
-        }
-        setRequesting(false);
-    };
+    const [stats, setStats] = useState<{ total: number; byType: ByType }>({ total: 0, byType: {} });
+    const [loadingStats, setLoadingStats] = useState(false);
+    const [errorStats, setErrorStats] = useState<string | null>(null);
 
+    // --- Fetch Pending Items
     const fetchPending = async () => {
         setLoading(true);
         setError(null);
@@ -57,96 +44,128 @@ export default function ReviewPage() {
         setLoading(false);
     };
 
+    // --- Fetch Item Stats
     const fetchStats = async () => {
-        setStatsLoading(true);
+        setLoadingStats(true);
+        setErrorStats(null);
         try {
             const res = await fetch(`${API_BASE}/item-stats`);
-            if (!res.ok) throw new Error("Failed to fetch item stats");
+            if (!res.ok) throw new Error("Failed to fetch stats");
             const data = await res.json();
-            setStats(data);
+            setStats({
+                total: data.total,
+                byType: data.byType
+            });
         } catch (e: any) {
-            // Optionally handle stats error
+            setErrorStats(e.message || "Unknown error");
         }
-        setStatsLoading(false);
+        setLoadingStats(false);
     };
 
-    useEffect(() => {
-        fetchPending();
-        fetchStats();
-    }, []);
-
-    const handleRefresh = () => {
-        fetchPending();
-        fetchStats();
+    // --- Request New Items
+    const handleRequestItems = async () => {
+        setRequesting(true);
+        try {
+            const res = await fetch(`${API_BASE}/request-items`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ count: requestCount, lang: "en" })
+            });
+            const data = await res.json();
+            alert("Request submitted! StepFunction execution started: " + data.executionArn);
+            fetchStats(); // Update stats after requesting new items
+        } catch (e) {
+            alert("Failed to request items: " + e);
+        }
+        setRequesting(false);
     };
 
-    const handleReview = async (itemId: string, version: number, status: "APPROVED" | "REJECTED") => {
+    // --- Approve/Reject
+    const handleReview = async (itemId: string, version: number, status: Status) => {
         try {
             await fetch(`${API_BASE}/review`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ itemId, version, status, reviewer: "fiadh" })
             });
+            // Refresh list after review
             setItems(items => items.filter(item => !(item.itemId === itemId && item.version === version)));
-            fetchStats(); // update stats after review
+            fetchStats(); // Update stats after reviewing
         } catch (e) {
             alert("Review failed: " + e);
         }
     };
 
+    // --- Manual Refresh Handler
+    const handleRefresh = () => {
+        fetchPending();
+        fetchStats();
+    };
+
+    useEffect(() => {
+        fetchPending();
+        fetchStats();
+        // eslint-disable-next-line
+    }, []);
+
     return (
-        <div style={{ maxWidth: 800, margin: "2rem auto", fontFamily: "system-ui" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div>
-                    <label>
-                        How many new items?&nbsp;
-                        <input
-                            type="number"
-                            min={1}
-                            max={100}
-                            value={requestCount}
-                            disabled={requesting}
-                            onChange={e => setRequestCount(Number(e.target.value))}
-                            style={{ width: 60, marginRight: 12 }}
-                        />
-                    </label>
-                    <button onClick={handleRequestItems} disabled={requesting || requestCount < 1}>
-                        {requesting ? "Requesting…" : "Request New Items"}
-                    </button>
-                </div>
-                <button
-                    onClick={handleRefresh}
-                    disabled={loading || statsLoading}
-                    style={{
-                        padding: "6px 14px", background: "#2c3e50", color: "#fff", border: "none",
-                        borderRadius: 5, fontWeight: "bold", cursor: "pointer", minWidth: 90
-                    }}>
-                    {loading || statsLoading ? "Refreshing…" : "Refresh"}
+        <div style={{ maxWidth: 900, margin: "2rem auto", fontFamily: "system-ui" }}>
+            <div style={{ marginBottom: 32 }}>
+                <label>
+                    How many new items?&nbsp;
+                    <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={requestCount}
+                        disabled={requesting}
+                        onChange={e => setRequestCount(Number(e.target.value))}
+                        style={{ width: 60, marginRight: 12 }}
+                    />
+                </label>
+                <button onClick={handleRequestItems} disabled={requesting || requestCount < 1}>
+                    {requesting ? "Requesting…" : "Request New Items"}
+                </button>
+                <button style={{ marginLeft: 16 }} onClick={handleRefresh}>
+                    Refresh List & Stats
                 </button>
             </div>
 
-            {stats && (
-                <table style={{ margin: "1rem 0", borderCollapse: "collapse", width: "100%" }}>
-                    <thead>
-                    <tr>
-                        <th style={{ border: "1px solid #ddd", padding: 8 }}>Type</th>
-                        <th style={{ border: "1px solid #ddd", padding: 8 }}>Count</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                        <td style={{ border: "1px solid #ddd", padding: 8 }}><b>Total</b></td>
-                        <td style={{ border: "1px solid #ddd", padding: 8 }}>{stats.total}</td>
-                    </tr>
-                    {Object.entries(stats.byType).map(([type, count]) => (
-                        <tr key={type}>
-                            <td style={{ border: "1px solid #ddd", padding: 8 }}>{type}</td>
-                            <td style={{ border: "1px solid #ddd", padding: 8 }}>{count}</td>
+            {/* Stats Table */}
+            <div style={{ margin: "24px 0" }}>
+                <h3>Database Stats</h3>
+                {loadingStats && <p>Loading stats…</p>}
+                {errorStats && <p style={{ color: "red" }}>{errorStats}</p>}
+                {!loadingStats && !errorStats && (
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 24 }}>
+                        <thead>
+                        <tr>
+                            <th style={{ textAlign: "left", padding: 8, borderBottom: "2px solid #eee" }}>Type</th>
+                            <th style={{ padding: 8, borderBottom: "2px solid #eee" }}>PENDING</th>
+                            <th style={{ padding: 8, borderBottom: "2px solid #eee" }}>APPROVED</th>
+                            <th style={{ padding: 8, borderBottom: "2px solid #eee" }}>REJECTED</th>
+                            <th style={{ padding: 8, borderBottom: "2px solid #eee" }}>TOTAL</th>
                         </tr>
-                    ))}
-                    </tbody>
-                </table>
-            )}
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td style={{ fontWeight: "bold", padding: 8 }}>Total</td>
+                            <td colSpan={3}></td>
+                            <td style={{ padding: 8 }}>{stats.total}</td>
+                        </tr>
+                        {Object.entries(stats.byType).map(([type, st]) => (
+                            <tr key={type}>
+                                <td style={{ padding: 8 }}>{type}</td>
+                                <td style={{ padding: 8 }}>{st.PENDING || 0}</td>
+                                <td style={{ padding: 8 }}>{st.APPROVED || 0}</td>
+                                <td style={{ padding: 8 }}>{st.REJECTED || 0}</td>
+                                <td style={{ padding: 8 }}>{st.TOTAL || 0}</td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
 
             <h2>Pending Items for Review</h2>
             {loading && <p>Loading…</p>}
