@@ -109,8 +109,26 @@ ${INTERACTIVE_ITEM_SCHEMA}
 For each 'type', the "spec" object should follow these patterns:
 
 - **word_search:**
-  - "grid": a 2D array of letters (9–12 rows of 9–12 uppercase letters each)
-  - "words": a list of at least 6 hidden words related to the theme
+  You are generating a word search puzzle.
+
+- "grid": A 2D array of 9–12 rows and 9–12 columns. Each cell is a single **uppercase letter**.
+- "words": A list of at least 6 hidden words related to the theme.
+
+Rules for grid:
+- Place each word **randomly** in one of 8 directions:
+  - Horizontal (left→right and right←left)
+  - Vertical (top→bottom and bottom→top)
+  - Diagonal (↘ ↖ ↙ ↗ in all directions)
+- Words **may appear backwards**
+- Words **can overlap** if letters match
+- Fill all unused cells with random uppercase letters (A–Z)
+
+ Output format:
+\`\`\`json
+{
+  "grid": [ ["A", "B", "C", ...], [...], ... ],
+  "words": ["THEMEWORD1", "THEMEWORD2", ...]
+}
 
 - **quiz_mcq:**
   - "questions": an array of at least 5 objects. Each object must have:
