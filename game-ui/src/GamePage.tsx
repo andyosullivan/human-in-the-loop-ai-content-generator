@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import WordSearchGame from "./WordSearchGame";
 
 // Change to your deployed API endpoint:
 const API_URL = "https://39rg9ru5oa.execute-api.eu-west-1.amazonaws.com/prod/random-approved";
@@ -19,7 +20,7 @@ export default function GamePage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    function renderWordSearchGrid(spec: any) {
+   /* function renderWordSearchGrid(spec: any) {
         if (!Array.isArray(spec.grid)) return <div>No grid data.</div>;
         const grid = spec.grid.map((row: string | string[]) =>
             Array.isArray(row) ? row : String(row).split("")
@@ -43,6 +44,16 @@ export default function GamePage() {
                 </tbody>
             </table>
         );
+    }*/
+
+    function renderWordSearchGrid(spec: any) {
+        if (!Array.isArray(spec.grid)) return <div>No grid data.</div>;
+
+        const grid = spec.grid.map((row: string | string[]) =>
+            Array.isArray(row) ? row : String(row).split("")
+        );
+
+        return <WordSearchGame grid={grid} words={spec.words || []} />;
     }
 
     const fetchRandomGame = async () => {
