@@ -10,6 +10,9 @@ cdk.out/              # synthesized CF templates & assets
 # If you ever use SAM or Serverless Framework alongside:
 .aws-sam/
 .serverless/
+cdk.out*
+diagram.*
+.aws-composer/
 
 # --- Lambda bundling (esbuild temp dirs) ------------------------------
 *.esbuild-*
