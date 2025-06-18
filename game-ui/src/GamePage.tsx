@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+
+//games
 import WordSearchGame from "./WordSearchGame";
+import MemoryMatchGame from "./MemoryMatchGame";
 
 // Change to your deployed API endpoint:
 const API_URL = "https://39rg9ru5oa.execute-api.eu-west-1.amazonaws.com/prod/random-approved";
@@ -19,32 +22,6 @@ export default function GamePage() {
     const [game, setGame] = useState<GameItem | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-   /* function renderWordSearchGrid(spec: any) {
-        if (!Array.isArray(spec.grid)) return <div>No grid data.</div>;
-        const grid = spec.grid.map((row: string | string[]) =>
-            Array.isArray(row) ? row : String(row).split("")
-        );
-
-        return (
-            <table style={{ borderCollapse: "collapse", margin: "1rem 0" }}>
-                <tbody>
-                {grid.map((row: string[], i: number) => (
-                    <tr key={i}>
-                        {row.map((cell, j) => (
-                            <td
-                                key={j}
-                                style={{ border: "1px solid #ccc", padding: "6px 10px", fontFamily: "monospace", fontWeight: 600 }}
-                            >
-                                {cell}
-                            </td>
-                        ))}
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        );
-    }*/
 
     function renderWordSearchGrid(spec: any) {
         if (!Array.isArray(spec.grid)) return <div>No grid data.</div>;
@@ -117,16 +94,7 @@ export default function GamePage() {
         }
 
         if (game.type === "memory_match") {
-            return (
-                <div>
-                    <h3>Memory Match</h3>
-                    <ul>
-                        {(game.spec.pairs || []).map((pair: any, idx: number) => (
-                            <li key={idx}>{pair.term} &rarr; {pair.match}</li>
-                        ))}
-                    </ul>
-                </div>
-            );
+            return <MemoryMatchGame spec={game.spec} />;
         }
 
         if (game.type === "space_shooter") {
