@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import WordSearchGame from "./WordSearchGame";
 import MemoryMatchGame from "./MemoryMatchGame";
 import QuizGame from "./QuizGame";
+import SpaceShooterGame from './SpaceShooterGame';
 
 // Change to your deployed API endpoint:
 const API_URL = "https://39rg9ru5oa.execute-api.eu-west-1.amazonaws.com/prod/random-approved";
@@ -88,15 +89,9 @@ export default function GamePage() {
             return <MemoryMatchGame spec={game.spec} />;
         }
 
+        //space shooter
         if (game.type === "space_shooter") {
-            return (
-                <div>
-                    <h3>Space Shooter</h3>
-                    <div><b>Level:</b> {game.spec.level}</div>
-                    <div><b>Enemies:</b> {(game.spec.enemyTypes || []).join(", ")}</div>
-                    <div><b>Abilities:</b> {(game.spec.playerAbilities || []).join(", ")}</div>
-                </div>
-            );
+            return <SpaceShooterGame spec={game.spec} />;
         }
 
         return (
