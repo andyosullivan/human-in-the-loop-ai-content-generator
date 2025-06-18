@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 //games
 import WordSearchGame from "./WordSearchGame";
 import MemoryMatchGame from "./MemoryMatchGame";
+import QuizGame from "./QuizGame";
 
 // Change to your deployed API endpoint:
 const API_URL = "https://39rg9ru5oa.execute-api.eu-west-1.amazonaws.com/prod/random-approved";
@@ -57,28 +58,17 @@ export default function GamePage() {
     // --- Render different game types simply (can extend each type) ---
     function renderGameBody() {
         if (!game) return null;
+        //word search
         if (game.type === "word_search") {
             return renderWordSearchGrid(game.spec);
         }
 
+        //quiz
         if (game.type === "quiz_mcq") {
-            return (
-                <div>
-                    <h3>Quiz</h3>
-                    {(game.spec.questions || []).map((q: any, idx: number) => (
-                        <div key={idx} style={{ marginBottom: 16 }}>
-                            <b>{q.question}</b>
-                            <ul>
-                                {q.choices.map((c: string, ci: number) => (
-                                    <li key={ci}>{c}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
-            );
+            return <QuizGame spec={game.spec} />;
         }
 
+        //jigsaw
         if (game.type === "jigsaw") {
             return (
                 <div>
@@ -93,6 +83,7 @@ export default function GamePage() {
             );
         }
 
+        //memory match
         if (game.type === "memory_match") {
             return <MemoryMatchGame spec={game.spec} />;
         }
