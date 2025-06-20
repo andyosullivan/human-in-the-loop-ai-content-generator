@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import SpecPreview from "./SpecPreview";
+import { useAuth } from "./AdminAuthContext";
 
 const API_BASE = "https://4yesf45xn7.execute-api.eu-west-1.amazonaws.com/prod";
 
@@ -29,12 +30,22 @@ export default function ReviewPage() {
     const [loadingStats, setLoadingStats] = useState(false);
     const [errorStats, setErrorStats] = useState<string | null>(null);
 
+    // jwt
+    const { jwt } = useAuth();
+
     // --- Fetch Pending Items
     const fetchPending = async () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${API_BASE}/pending`);
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+                ...(jwt ? { "Authorization": jwt } : {})
+            };
+
+            const res = await fetch(`${API_BASE}/pending`, {
+                headers,
+            });
             if (!res.ok) throw new Error("Failed to fetch pending items");
             const data = await res.json();
             setItems(data.items);
@@ -44,12 +55,18 @@ export default function ReviewPage() {
         setLoading(false);
     };
 
+
     // --- Fetch Item Stats
     const fetchStats = async () => {
         setLoadingStats(true);
         setErrorStats(null);
         try {
-            const res = await fetch(`${API_BASE}/item-stats`);
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+                ...(jwt ? { "Authorization": jwt } : {})
+            };
+
+            const res = await fetch(`${API_BASE}/item-stats`, { headers });
             if (!res.ok) throw new Error("Failed to fetch stats");
             const data = await res.json();
             setStats({
@@ -62,13 +79,19 @@ export default function ReviewPage() {
         setLoadingStats(false);
     };
 
+
     // --- Request New Items
     const handleRequestItems = async () => {
         setRequesting(true);
         try {
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+                ...(jwt ? { "Authorization": jwt } : {})
+            };
+
             const res = await fetch(`${API_BASE}/request-items`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({ count: requestCount, lang: "en" })
             });
             const data = await res.json();
@@ -80,12 +103,18 @@ export default function ReviewPage() {
         setRequesting(false);
     };
 
+
     // --- Approve/Reject
     const handleReview = async (itemId: string, version: number, status: Status) => {
         try {
+            const headers: HeadersInit = {
+                "Content-Type": "application/json",
+                ...(jwt ? { "Authorization": jwt } : {})
+            };
+
             await fetch(`${API_BASE}/review`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({ itemId, version, status, reviewer: "fiadh" })
             });
             // Refresh list after review
@@ -95,6 +124,7 @@ export default function ReviewPage() {
             alert("Review failed: " + e);
         }
     };
+
 
     // --- Manual Refresh Handler
     const handleRefresh = () => {

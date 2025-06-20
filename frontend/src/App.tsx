@@ -1,17 +1,40 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home from './Home';
-import ReviewPage from './ReviewPage';
+import React from "react";
+import ReviewPage from "./ReviewPage";
+import AdminLoginPage from "./AdminLoginPage";
+import { AdminAuthProvider, useAuth } from "./AdminAuthContext";
 
-function App() {
+// Simple guard for admin pages
+function AdminGuard({ children }: { children: React.ReactNode }) {
+    // CHANGE IS HERE
+    const { jwt, logout } = useAuth();
+    if (!jwt) return <AdminLoginPage />;
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/review" element={<ReviewPage />} />
-            </Routes>
-        </BrowserRouter>
+        <div>
+            <div style={{ textAlign: "right", margin: 10 }}>
+                <button
+                    onClick={logout}
+                    style={{
+                        background: "crimson",
+                        color: "#fff",
+                        borderRadius: 6,
+                        border: "none",
+                        padding: "4px 14px"
+                    }}
+                >
+                    Logout
+                </button>
+            </div>
+            {children}
+        </div>
     );
 }
 
-export default App;
+export default function App() {
+    return (
+        <AdminAuthProvider>
+            <AdminGuard>
+                <ReviewPage />
+            </AdminGuard>
+        </AdminAuthProvider>
+    );
+}

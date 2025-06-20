@@ -1,9 +1,15 @@
 import { Stack, StackProps, Duration, RemovalPolicy } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { LambdaIntegration, RestApi, Resource,
+import {
+  LambdaIntegration,
+  RestApi,
+  Resource,
   MockIntegration,
-  PassthroughBehavior  } from 'aws-cdk-lib/aws-apigateway';
+  PassthroughBehavior,
+  CognitoUserPoolsAuthorizer,
+  AuthorizationType,
+} from 'aws-cdk-lib/aws-apigateway';
 import {
   Table,
   AttributeType,
@@ -11,15 +17,15 @@ import {
 } from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { Bucket, BucketAccessControl, HttpMethods } from 'aws-cdk-lib/aws-s3';
+import { Bucket, HttpMethods } from 'aws-cdk-lib/aws-s3';
 import { BlockPublicAccess } from "aws-cdk-lib/aws-s3";
 import { Distribution, OriginAccessIdentity, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { CfnOutput } from 'aws-cdk-lib';
-import { StateMachine, Pass, TaskInput, Map, JsonPath } from 'aws-cdk-lib/aws-stepfunctions';
+import { StateMachine, Map, JsonPath, TaskInput } from 'aws-cdk-lib/aws-stepfunctions';
 import { LambdaInvoke } from 'aws-cdk-lib/aws-stepfunctions-tasks';
-
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 
 export class AwslambdahackathonStack extends Stack {
   public readonly itemsTable: Table;
@@ -53,9 +59,7 @@ export class AwslambdahackathonStack extends Stack {
       });
     }
 
-
     // DynamoDB table
-
     this.itemsTable = new Table(this, 'ItemsTable', {
       partitionKey: { name: 'itemId', type: AttributeType.STRING },
       sortKey:      { name: 'version', type: AttributeType.NUMBER },
@@ -69,6 +73,35 @@ export class AwslambdahackathonStack extends Stack {
       sortKey: { name: "createdAt", type: AttributeType.STRING }
     });
 
+    // --- Cognito User Pool for Admin Auth ---
+    const userPool = new cognito.UserPool(this, "AdminUserPool", {
+      selfSignUpEnabled: false,
+      signInAliases: { email: true },
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+    const userPoolClient = new cognito.UserPoolClient(this, "AdminUserPoolClient", {
+      userPool,
+      generateSecret: false,
+    });
+
+    // --- API Gateway ---
+    const api = new RestApi(this, 'HelloApi');
+    api.root.addMethod('GET', new LambdaIntegration(
+        new NodejsFunction(this, 'HelloFn', {
+          entry: 'lambda/hello.ts',
+          timeout: Duration.seconds(10),
+          environment: {
+            ITEMS_TABLE_NAME: this.itemsTable.tableName,
+          },
+        })
+    ));
+
+    // Cognito Authorizer for protected admin endpoints
+    const authorizer = new CognitoUserPoolsAuthorizer(this, "CognitoAuthorizer", {
+      cognitoUserPools: [userPool]
+    });
+
+    // Lambdas as before
     const listPendingFn = new NodejsFunction(this, "ListPendingFn", {
       entry: "lambda/listPending.ts",
       runtime: Runtime.NODEJS_20_X,
@@ -79,16 +112,6 @@ export class AwslambdahackathonStack extends Stack {
       }
     });
     this.itemsTable.grantReadData(listPendingFn);
-
-    // 2️⃣ Lambdas
-    const handler = new NodejsFunction(this, 'HelloFn', {
-      entry: 'lambda/hello.ts',
-      timeout: Duration.seconds(10),
-      environment: {
-        ITEMS_TABLE_NAME: this.itemsTable.tableName,
-      },
-    });
-    this.itemsTable.grantReadWriteData(handler);
 
     const generatorFn = new NodejsFunction(this, 'GeneratorFn', {
       entry: 'lambda/generator.ts',
@@ -132,14 +155,12 @@ export class AwslambdahackathonStack extends Stack {
         })
     );
 
-// Grant write/upload permissions to the generator Lambda
-    puzzleImagesBucket.grantPut(generatorFn); // <-- assuming generatorFn is your image-generating lambda
+    puzzleImagesBucket.grantPut(generatorFn);
 
-// Pass bucket name as an environment variable to the Lambda
     generatorFn.addEnvironment("PUZZLE_IMAGES_BUCKET", puzzleImagesBucket.bucketName);
     generatorFn.addEnvironment("BEDROCK_IMAGE_MODEL_ID", "amazon.titan-image-generator-v1");
 
-
+    // Step Functions for bulk generation
     const generatorTask = new LambdaInvoke(this, 'InvokeGenerator', {
       lambdaFunction: generatorFn,
       payload: TaskInput.fromObject({
@@ -151,14 +172,12 @@ export class AwslambdahackathonStack extends Stack {
 
     const mapState = new Map(this, 'ForEach', {
       itemsPath: '$.items',
-      // DO NOT set itemSelector or parameters here!
     }).iterator(generatorTask);
 
     const stateMachine = new StateMachine(this, 'GeneratorStateMachine', {
       definition: mapState,
       timeout: Duration.minutes(15),
     });
-
 
     const reviewerFn = new NodejsFunction(this, 'ReviewerFn', {
       entry: 'lambda/reviewer.ts',
@@ -176,7 +195,6 @@ export class AwslambdahackathonStack extends Stack {
       resources: [`arn:aws:bedrock:${this.region}::foundation-model/*`]
     }));
 
-    // Assume you have already defined your StateMachine (see below)
     const stepFn = stateMachine;
 
     const requestItemsFn = new NodejsFunction(this, "RequestItemsFn", {
@@ -196,27 +214,34 @@ export class AwslambdahackathonStack extends Stack {
     });
     this.itemsTable.grantReadData(itemStatsFn);
 
-    // API Gateway
-    const api = new RestApi(this, 'HelloApi');
-    api.root.addMethod('GET', new LambdaIntegration(handler));
+    // --- API endpoints ---
+
+    // PROTECTED ADMIN ENDPOINTS (require Cognito JWT)
+    function protect(resource: Resource, lambda: NodejsFunction, method: string = "POST") {
+      resource.addMethod(method, new LambdaIntegration(lambda), {
+        authorizer,
+        authorizationType: AuthorizationType.COGNITO
+      });
+      addCorsOptions(resource);
+    }
+
     const generateResource = api.root.addResource('generate');
-    generateResource.addMethod('POST', new LambdaIntegration(generatorFn));
+    generateResource.addMethod('POST', new LambdaIntegration(generatorFn)); // Public (if you want)
     addCorsOptions(generateResource);
+
     const reviewResource = api.root.addResource('review');
-    reviewResource.addMethod('POST', new LambdaIntegration(reviewerFn));
-    addCorsOptions(reviewResource);
+    protect(reviewResource, reviewerFn, "POST");
+
     const pendingResource = api.root.addResource('pending');
-    pendingResource.addMethod('GET', new LambdaIntegration(listPendingFn));
-    addCorsOptions(pendingResource);
+    protect(pendingResource, listPendingFn, "GET");
+
     const requestItemsResource = api.root.addResource('request-items');
-    requestItemsResource.addMethod('POST', new LambdaIntegration(requestItemsFn));
-    addCorsOptions(requestItemsResource);
+    protect(requestItemsResource, requestItemsFn, "POST");
+
     const itemStatsResource = api.root.addResource('item-stats');
-    itemStatsResource.addMethod('GET', new LambdaIntegration(itemStatsFn));
-    addCorsOptions(itemStatsResource);
+    protect(itemStatsResource, itemStatsFn, "GET");
 
-
-    //  S3 static site bucket
+    // --- S3 static site bucket ---
     const siteBucket = new Bucket(this, "SiteBucket", {
       websiteIndexDocument: "index.html",
       publicReadAccess: true,
@@ -230,14 +255,12 @@ export class AwslambdahackathonStack extends Stack {
       autoDeleteObjects: true,
     });
 
-    // Optional: add CORS for S3 if needed for web fonts/images
     siteBucket.addCorsRule({
       allowedMethods: [HttpMethods.GET],
       allowedOrigins: ["*"],
       allowedHeaders: ["*"],
     });
 
-    // 5️⃣ CloudFront distribution for SPA
     const oai = new OriginAccessIdentity(this, "SiteOAI");
     siteBucket.grantRead(oai);
 
@@ -263,18 +286,21 @@ export class AwslambdahackathonStack extends Stack {
       ],
     });
 
-    // 6️⃣ Deploy React build to S3 and invalidate CloudFront
     new BucketDeployment(this, "DeployWebsite", {
-      sources: [Source.asset("frontend/build")], // <-- update to your React build output dir
+      sources: [Source.asset("frontend/build")],
       destinationBucket: siteBucket,
       distribution: cf,
       distributionPaths: ["/*"],
     });
 
-    // 7️⃣ Output website URL for your convenience
     new CfnOutput(this, "SiteURL", {
       value: "https://" + cf.domainName,
       description: "The CloudFront URL of the React review UI"
     });
+
+    // --- Cognito outputs for frontend ---
+    new CfnOutput(this, "CognitoUserPoolId", { value: userPool.userPoolId });
+    new CfnOutput(this, "CognitoUserPoolClientId", { value: userPoolClient.userPoolClientId });
+    new CfnOutput(this, "ApiUrl", { value: api.url });
   }
 }
