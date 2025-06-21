@@ -86,15 +86,6 @@ export class AwslambdahackathonStack extends Stack {
 
     // --- API Gateway ---
     const api = new RestApi(this, 'HelloApi');
-    api.root.addMethod('GET', new LambdaIntegration(
-        new NodejsFunction(this, 'HelloFn', {
-          entry: 'lambda/hello.ts',
-          timeout: Duration.seconds(10),
-          environment: {
-            ITEMS_TABLE_NAME: this.itemsTable.tableName,
-          },
-        })
-    ));
 
     // Cognito Authorizer for protected admin endpoints
     const authorizer = new CognitoUserPoolsAuthorizer(this, "CognitoAuthorizer", {
