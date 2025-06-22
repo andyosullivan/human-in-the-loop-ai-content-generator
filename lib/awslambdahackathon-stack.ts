@@ -224,6 +224,17 @@ export class AwslambdahackathonStack extends Stack {
     });
     this.itemsTable.grantReadData(itemStatsFn);
 
+    const listAnalyticsFn = new NodejsFunction(this, "ListAnalyticsFn", {
+      entry: "lambda/listAnalytics.ts",
+      runtime: Runtime.NODEJS_20_X,
+      timeout: Duration.seconds(10),
+      memorySize: 256,
+      environment: {
+        ANALYTICS_TABLE_NAME: this.analyticsTable.tableName,
+      }
+    });
+    this.analyticsTable.grantReadData(listAnalyticsFn);
+
     // --- API endpoints ---
 
     // PROTECTED ADMIN ENDPOINTS (require Cognito JWT)
@@ -250,6 +261,9 @@ export class AwslambdahackathonStack extends Stack {
 
     const itemStatsResource = api.root.addResource('item-stats');
     protect(itemStatsResource, itemStatsFn, "GET");
+
+    const analyticsResource = api.root.addResource('analytics');
+    protect(analyticsResource, listAnalyticsFn, "GET");
 
     // --- S3 static site bucket ---
     const siteBucket = new Bucket(this, "SiteBucket", {

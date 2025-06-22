@@ -1,11 +1,11 @@
 import React from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import ReviewPage from "./ReviewPage";
+import Analytics from "./Analytics";
 import AdminLoginPage from "./AdminLoginPage";
 import { AdminAuthProvider, useAuth } from "./AdminAuthContext";
 
-// Simple guard for admin pages
 function AdminGuard({ children }: { children: React.ReactNode }) {
-    // CHANGE IS HERE
     const { jwt, logout } = useAuth();
     if (!jwt) return <AdminLoginPage />;
     return (
@@ -24,6 +24,11 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
                     Logout
                 </button>
             </div>
+            {/* Add a navbar */}
+            <nav style={{ marginBottom: 16 }}>
+                <Link to="/" style={{ marginRight: 16 }}>Review</Link>
+                <Link to="/analytics">Analytics</Link>
+            </nav>
             {children}
         </div>
     );
@@ -32,9 +37,14 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 export default function App() {
     return (
         <AdminAuthProvider>
-            <AdminGuard>
-                <ReviewPage />
-            </AdminGuard>
+            <BrowserRouter>
+                <AdminGuard>
+                    <Routes>
+                        <Route path="/" element={<ReviewPage />} />
+                        <Route path="/analytics" element={<Analytics />} />
+                    </Routes>
+                </AdminGuard>
+            </BrowserRouter>
         </AdminAuthProvider>
     );
 }
