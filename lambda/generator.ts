@@ -11,6 +11,8 @@ const MODEL_ID = process.env.BEDROCK_MODEL_ID!; // e.g. "anthropic.claude-3-sonn
 const IMAGE_MODEL_ID = process.env.BEDROCK_IMAGE_MODEL_ID || "amazon.titan-image-generator-v1"; // <-- add this env
 const REGION = process.env.AWS_REGION || "eu-west-1";
 const PUZZLE_IMAGES_BUCKET = process.env.PUZZLE_IMAGES_BUCKET!;
+const PUZZLE_IMAGES_CLOUDFRONT_URL = process.env.PUZZLE_IMAGES_CLOUDFRONT_URL!;
+
 
 // ----- one-time clients -----
 const bedrock = new BedrockRuntimeClient({ region: REGION });
@@ -83,8 +85,9 @@ async function generateAndStoreJigsawImage(promptText: string, itemId: string): 
         // No ACL!
     }));
 
-    // 3. Return the public URL
-    return `https://${PUZZLE_IMAGES_BUCKET}.s3.${REGION}.amazonaws.com/${s3Key}`;
+    // 3. Return the image URL (now via Cloudfront, not direct from S3)
+    //return `https://${PUZZLE_IMAGES_BUCKET}.s3.${REGION}.amazonaws.com/${s3Key}`;
+    return `${PUZZLE_IMAGES_CLOUDFRONT_URL}/jigsaws/${itemId}.png`;
 }
 
 
@@ -93,6 +96,7 @@ export const handler = async (event: any = {}): Promise<any> => {
     /* Choose the item type & language from the request or default */
     const requestedType = event.type || "word_search";
     const requestedLang = event.lang || "en";
+
 
     /* prompt */
     const prompt = `
@@ -207,7 +211,7 @@ If the type is not recognized, return an object with "status": "REJECTED" and a 
     if (item.type === "jigsaw") {
         try {
             // Make a nice puzzle prompt:
-            const theme = item?.spec?.theme || "colorful puzzle for a game";
+            //const theme = item?.spec?.theme || "colorful puzzle for a game";
             const pieces = item?.spec?.pieces || 24;
             const promptText = `A bright, fun, detailed illustration of a cute animal for a ${pieces}-piece jigsaw puzzle, for a kids/family game. Make sure there are NO words or text in the image.`;
             // This call may take ~10 seconds!

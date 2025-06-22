@@ -117,39 +117,49 @@ export class AwslambdahackathonStack extends Stack {
     this.itemsTable.grantReadWriteData(generatorFn);
 
     // Create the S3 bucket for puzzle images
+    // 1. Secure S3 bucket - NO publicReadAccess, block all public access
     const puzzleImagesBucket = new Bucket(this, "PuzzleImagesBucket", {
-      bucketName: `${this.stackName.toLowerCase()}-puzzle-images`, // change if needed
-      publicReadAccess: true, // public-read for demo/dev; use signed URLs in prod!
-      blockPublicAccess: new BlockPublicAccess({
-        blockPublicAcls: false,
-        blockPublicPolicy: false,
-        ignorePublicAcls: false,
-        restrictPublicBuckets: false,
-      }),
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL, // Important: secure!
       cors: [
         {
           allowedMethods: [HttpMethods.GET],
-          allowedOrigins: ["*"],
+          allowedOrigins: ["*"], // or restrict to your game CloudFront domain for even more security
           allowedHeaders: ["*"],
-        },
+        }
       ]
     });
 
-    puzzleImagesBucket.addToResourcePolicy(
-        new iam.PolicyStatement({
-          actions: ['s3:GetObject'],
-          resources: [puzzleImagesBucket.arnForObjects('*')],
-          principals: [new iam.AnyPrincipal()],
-          effect: iam.Effect.ALLOW,
-        })
-    );
+    // 2. Allow ONLY your Lambda to upload images
+    puzzleImagesBucket.grantPut(generatorFn); // assumes generatorFn is your Lambda
 
-    puzzleImagesBucket.grantPut(generatorFn);
+    // 3. Create an OAI (Origin Access Identity) for CloudFront to read images
+    const imagesOAI = new OriginAccessIdentity(this, "PuzzleImagesOAI");
+
+    // 4. Grant read access to OAI
+    puzzleImagesBucket.grantRead(imagesOAI);
+
+    // 5. Create a CloudFront distribution for serving images
+    const puzzleImagesCF = new Distribution(this, "PuzzleImagesDistribution", {
+      defaultBehavior: {
+        origin: new S3Origin(puzzleImagesBucket, { originAccessIdentity: imagesOAI }),
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      }
+    });
+
+    // 6. Output the CloudFront domain for use in your app/Lambda
+    new CfnOutput(this, "PuzzleImagesCFDomain", {
+      value: "https://" + puzzleImagesCF.domainName,
+      description: "CloudFront distribution for puzzle images (use this as image URL base)"
+    });
+
+
 
     generatorFn.addEnvironment("PUZZLE_IMAGES_BUCKET", puzzleImagesBucket.bucketName);
     generatorFn.addEnvironment("BEDROCK_IMAGE_MODEL_ID", "amazon.titan-image-generator-v1");
+    generatorFn.addEnvironment("PUZZLE_IMAGES_CLOUDFRONT_URL", "https://d6kwpd0i8hxdp.cloudfront.net");
+
 
     // Step Functions for bulk generation
     const generatorTask = new LambdaInvoke(this, 'InvokeGenerator', {
