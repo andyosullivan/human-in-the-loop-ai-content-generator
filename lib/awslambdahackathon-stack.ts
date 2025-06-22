@@ -29,6 +29,7 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 
 export class AwslambdahackathonStack extends Stack {
   public readonly itemsTable: Table;
+  public readonly analyticsTable: Table;
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
@@ -71,6 +72,14 @@ export class AwslambdahackathonStack extends Stack {
       indexName: "StatusIndex",
       partitionKey: { name: "status", type: AttributeType.STRING },
       sortKey: { name: "createdAt", type: AttributeType.STRING }
+    });
+
+    // --- Analytics Table for usage tracking ---
+    this.analyticsTable = new Table(this, 'AnalyticsTable', {
+      partitionKey: { name: 'pk', type: AttributeType.STRING }, // e.g. 'date#2024-06-22'
+      sortKey:      { name: 'sk', type: AttributeType.STRING }, // e.g. 'game#itemId'
+      billingMode:  BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY,
     });
 
     // --- Cognito User Pool for Admin Auth ---

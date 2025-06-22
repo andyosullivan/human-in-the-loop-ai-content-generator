@@ -7,8 +7,9 @@ import MemoryMatchGame from "./MemoryMatchGame";
 import QuizGame from "./QuizGame";
 import SpaceShooterGame from './SpaceShooterGame';
 
-// Change to your deployed API endpoint:
+// API endpoints:
 const API_URL = "https://39rg9ru5oa.execute-api.eu-west-1.amazonaws.com/prod/random-approved";
+const ANALYTICS_API_URL = "https://39rg9ru5oa.execute-api.eu-west-1.amazonaws.com/prod/log-analytics";
 
 type GameItem = {
     itemId: string;
@@ -19,6 +20,22 @@ type GameItem = {
     createdAt: string;
     spec: any;
 };
+
+async function logAnalytics(event: {
+    type: string;
+    gameType?: string;
+    meta?: any;
+}) {
+    try {
+        await fetch(ANALYTICS_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(event)
+        });
+    } catch {
+        // fail silently, don't break the UX
+    }
+}
 
 export default function GamePage() {
     const [game, setGame] = useState<GameItem | null>(null);
@@ -35,6 +52,7 @@ export default function GamePage() {
         return <WordSearchGame grid={grid} words={spec.words || []} />;
     }
 
+    // --- Fetch a random game, and log "game_loaded" event ---
     const fetchRandomGame = async () => {
         setLoading(true);
         setError(null);
@@ -44,6 +62,17 @@ export default function GamePage() {
             if (!res.ok) throw new Error("Failed to fetch game");
             const data = await res.json();
             setGame(data);
+
+            // Log analytics event for game loaded
+            logAnalytics({
+                type: "game_loaded",
+                gameType: data.type,
+                meta: {
+                    itemId: data.itemId,
+                    version: data.version,
+                    lang: data.lang
+                }
+            });
         } catch (e: any) {
             setError(e.message || "Failed to load game.");
         } finally {
@@ -105,16 +134,19 @@ export default function GamePage() {
         <div style={{ maxWidth: 480, margin: "auto", padding: "16px" }}>
             <h2 style={{ textAlign: "center" }}>Random AI-Generated Game</h2>
             <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <button onClick={fetchRandomGame} disabled={loading} style={{
-                    background: "#4f7cff",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "8px 20px",
-                    fontSize: 16,
-                    marginBottom: 8,
-                    cursor: loading ? "not-allowed" : "pointer"
-                }}>
+                <button
+                    onClick={fetchRandomGame}
+                    disabled={loading}
+                    style={{
+                        background: "#4f7cff",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "8px 20px",
+                        fontSize: 16,
+                        marginBottom: 8,
+                        cursor: loading ? "not-allowed" : "pointer"
+                    }}>
                     {loading ? "Loading..." : "New Game"}
                 </button>
             </div>

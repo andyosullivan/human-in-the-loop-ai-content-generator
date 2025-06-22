@@ -10,7 +10,8 @@ const mainStack = new AwslambdahackathonStack(app, 'AwslambdahackathonStack', {
 });
 
 new GamePlayerAppStack(app, 'GamePlayerAppStack', {
-    itemsTable: mainStack.itemsTable, // This is now recognized!
+    itemsTable: mainStack.itemsTable,
+    analyticsTable: mainStack.analyticsTable,
     env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 });
 

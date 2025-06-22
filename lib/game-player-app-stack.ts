@@ -13,6 +13,7 @@ import {Runtime} from "aws-cdk-lib/aws-lambda";
 
 export interface GamePlayerAppStackProps extends StackProps {
     itemsTable: Table;
+    analyticsTable: Table;
 }
 
 export class GamePlayerAppStack extends Stack {
@@ -22,6 +23,7 @@ export class GamePlayerAppStack extends Stack {
         super(scope, id, props);
 
         const itemsTable = props.itemsTable;
+        const analyticsTable = props.analyticsTable;
 
         const randomApprovedFn = new NodejsFunction(this, "RandomApprovedFn", {
             entry: "lambda/randomApproved.ts", // Lambda code shown in my previous message!
@@ -33,7 +35,18 @@ export class GamePlayerAppStack extends Stack {
         });
         itemsTable.grantReadData(randomApprovedFn);
 
-        // --- 2. API Gateway ---
+        const logAnalyticsFn = new NodejsFunction(this, "LogAnalyticsFn", {
+            entry: "lambda/logAnalytics.ts", // <--- make sure this is your Lambda's path
+            runtime: Runtime.NODEJS_20_X,
+            timeout: Duration.seconds(5),
+            memorySize: 128,
+            environment: {
+                ANALYTICS_TABLE_NAME: analyticsTable.tableName
+            }
+        });
+        analyticsTable.grantWriteData(logAnalyticsFn);
+
+        // API Gateway ---
         const api = new RestApi(this, "GamePlayerApi");
         const randomApprovedResource = api.root.addResource("random-approved");
         randomApprovedResource.addMethod("GET", new LambdaIntegration(randomApprovedFn));
@@ -64,6 +77,37 @@ export class GamePlayerAppStack extends Stack {
                 }]
             }
         );
+
+        const analyticsResource = api.root.addResource("log-analytics");
+        analyticsResource.addMethod("POST", new LambdaIntegration(logAnalyticsFn));
+
+// CORS preflight for POST
+        analyticsResource.addMethod(
+            "OPTIONS",
+            new MockIntegration({
+                integrationResponses: [{
+                    statusCode: "200",
+                    responseParameters: {
+                        "method.response.header.Access-Control-Allow-Headers": "'*'",
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'",
+                    }
+                }],
+                passthroughBehavior: PassthroughBehavior.NEVER,
+                requestTemplates: { "application/json": "{\"statusCode\": 200}" }
+            }),
+            {
+                methodResponses: [{
+                    statusCode: "200",
+                    responseParameters: {
+                        "method.response.header.Access-Control-Allow-Headers": true,
+                        "method.response.header.Access-Control-Allow-Methods": true,
+                        "method.response.header.Access-Control-Allow-Origin": true,
+                    }
+                }]
+            }
+        );
+
 
         // S3 Bucket for the game player app
         const gameSiteBucket = new Bucket(this, "GameSiteBucket", {
