@@ -7,7 +7,9 @@ const ITEM_TYPES = [
     "word_search",
     "memory_match",
     "space_shooter",
-    "jigsaw"
+    "jigsaw",
+    "true_false",
+    "odd_one_out"
 ];
 
 export const handler = async (event: any = {}) => {

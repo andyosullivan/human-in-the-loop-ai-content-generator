@@ -30,7 +30,7 @@ You must return JSON that validates against this schema:
   "properties":{
     "id":{"type":"string","pattern":"^item_[a-f0-9]{8}$"},
     "version":{"type":"integer"},
-    "type":{"enum":["word_search","quiz_mcq","memory_match","space_shooter","jigsaw"]},
+    "type":{"enum":["word_search","quiz_mcq","memory_match","space_shooter","jigsaw","true_false","odd_one_out"]},
     "lang":{"type":"string"},
     "status":{"enum":["PENDING","APPROVED","REJECTED"]},
     "spec":{"type":"object"}
@@ -107,7 +107,8 @@ ${INTERACTIVE_ITEM_SCHEMA}
 
 **Type:** "${requestedType}"
 **Language:** "${requestedLang}"
-**Theme:** "hackathon-demo"
+**Theme:** Choose a fun, general-knowledge theme. For example: animals, sports, history, food, world capitals, movies, science, music, weather, holidays, famous people, technology, etc.
+
 **Difficulty:** "easy"
 
 For each 'type', the "spec" object should follow these patterns:
@@ -153,6 +154,18 @@ Rules for grid:
 - **jigsaw:**
   - "imageUrl": a plausible image URL string (use a placeholder like "https://example.com/jigsaw1.png")
   - "pieces": integer (number of pieces, 12–48)
+  
+- **true_false:**
+  - "questions": array of at least 5 objects. Each object must have:
+    - "statement": string (the fact or claim)
+    - "answer": boolean (true or false)
+    - "explanation": string (short explanation of the answer)
+
+- **odd_one_out:**
+  - "rounds": array of at least 5 objects. Each object must have:
+    - "options": array of 4 strings (the choices)
+    - "answer": integer (the index of the odd one out)
+    - "explanation": string (why this is the odd one)
 
 **Strict instructions:**
 - Return ONLY the JSON, no markdown, no explanations, no \`\`\` fences, no trailing text.

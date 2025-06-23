@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-//games
+// Games
 import WordSearchGame from "./WordSearchGame";
 import MemoryMatchGame from "./MemoryMatchGame";
 import QuizGame from "./QuizGame";
-import SpaceShooterGame from './SpaceShooterGame';
+import SpaceShooterGame from "./SpaceShooterGame";
+import TrueOrFalseGame from "./TrueOrFalseGame";
+import OddOneOutGame from "./OddOneOutGame";
 
 // API endpoints:
 const API_URL = "https://39rg9ru5oa.execute-api.eu-west-1.amazonaws.com/prod/random-approved";
@@ -88,17 +90,12 @@ export default function GamePage() {
     // --- Render different game types simply (can extend each type) ---
     function renderGameBody() {
         if (!game) return null;
-        //word search
         if (game.type === "word_search") {
             return renderWordSearchGrid(game.spec);
         }
-
-        //quiz
         if (game.type === "quiz_mcq") {
             return <QuizGame spec={game.spec} />;
         }
-
-        //jigsaw
         if (game.type === "jigsaw") {
             return (
                 <div>
@@ -112,21 +109,22 @@ export default function GamePage() {
                 </div>
             );
         }
-
-        //memory match
         if (game.type === "memory_match") {
             return <MemoryMatchGame spec={game.spec} />;
         }
-
-        //space shooter
         if (game.type === "space_shooter") {
             return <SpaceShooterGame spec={game.spec} />;
         }
-
+        if (game.type === "true_false" || game.type === "true_or_false") {
+            return <TrueOrFalseGame spec={game.spec} />;
+        }
+        if (game.type === "odd_one_out") {
+            return <OddOneOutGame spec={game.spec} />;
+        }
         return (
             <pre style={{ background: "#f7f7f7", padding: 8, borderRadius: 8, fontSize: 14 }}>
-        {JSON.stringify(game, null, 2)}
-      </pre>
+                {JSON.stringify(game, null, 2)}
+            </pre>
         );
     }
 

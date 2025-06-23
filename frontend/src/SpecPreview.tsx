@@ -1,6 +1,6 @@
 import React from "react";
 
-// TypeScript types for specs (make them stricter as needed)
+// ----- TypeScript types for specs -----
 type WordSearchSpec = {
     grid: string[][],
     words: string[]
@@ -25,6 +25,23 @@ type JigsawSpec = {
     pieces: number
 };
 
+type OddOneOutSpec = {
+    rounds: { options: string[], answer: number, explanation?: string }[]
+};
+
+type TrueOrFalseSpec = {
+    questions: { statement: string, answer: boolean, explanation?: string }[]
+};
+
+type SupportedSpecs =
+    | WordSearchSpec
+    | QuizMCQSpec
+    | MemoryMatchSpec
+    | SpaceShooterSpec
+    | JigsawSpec
+    | OddOneOutSpec
+    | TrueOrFalseSpec;
+
 export default function SpecPreview({ type, spec }: { type: string, spec: any }) {
     if (!spec || typeof spec !== "object") return <div>No preview available.</div>;
 
@@ -39,6 +56,10 @@ export default function SpecPreview({ type, spec }: { type: string, spec: any })
             return <SpaceShooterPreview spec={spec} />;
         case "jigsaw":
             return <JigsawPreview spec={spec} />;
+        case "odd_one_out":
+            return <OddOneOutPreview spec={spec} />;
+        case "true_false":
+            return <TrueOrFalsePreview spec={spec} />;
         default:
             return <div>Unknown type: {type}</div>;
     }
@@ -155,6 +176,92 @@ function JigsawPreview({ spec }: { spec: JigsawSpec }) {
             <img src={spec.imageUrl} alt="jigsaw preview" style={{ width: 240, borderRadius: 12, border: "1px solid #ccc" }} />
             <div>Number of pieces: {spec.pieces}</div>
             <em>Preview: shows image, but not interactive yet</em>
+        </div>
+    );
+}
+
+// NEW: Odd One Out Preview
+function OddOneOutPreview({ spec }: { spec: OddOneOutSpec }) {
+    return (
+        <div>
+            <h4>Odd One Out</h4>
+            {spec.rounds?.map((round, i) =>
+                <div key={i} style={{ marginBottom: 18 }}>
+                    <div><b>Round {i + 1}:</b></div>
+                    <ul style={{ listStyle: "none", paddingLeft: 0 }}>
+                        {round.options.map((option, j) =>
+                            <li
+                                key={j}
+                                style={{
+                                    display: "inline-block",
+                                    marginRight: 16,
+                                    padding: "4px 10px",
+                                    borderRadius: 6,
+                                    background: j === round.answer ? "#ffd6e0" : "#eee",
+                                    fontWeight: j === round.answer ? "bold" : "normal"
+                                }}
+                            >
+                                {option}
+                                {j === round.answer ? <span style={{ marginLeft: 6, color: "#c90076" }}>★</span> : ""}
+                            </li>
+                        )}
+                    </ul>
+                    {round.explanation && <div style={{ fontSize: 14, color: "#555" }}>Explanation: {round.explanation}</div>}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// NEW: True or False Preview
+function TrueOrFalsePreview({ spec }: { spec: TrueOrFalseSpec }) {
+    const [selected, setSelected] = React.useState<{ [k: number]: boolean | null }>({});
+
+    return (
+        <div>
+            <h4>True or False</h4>
+            {spec.questions?.map((q, i) =>
+                <div key={i} style={{ marginBottom: 18 }}>
+                    <div><strong>Q{i + 1}:</strong> {q.statement}</div>
+                    <div>
+                        <button
+                            style={{
+                                background: selected[i] === true
+                                    ? (q.answer === true ? "green" : "crimson")
+                                    : "#eee",
+                                color: selected[i] === true ? "#fff" : "#333",
+                                margin: 4, borderRadius: 6, border: "none", padding: "6px 18px"
+                            }}
+                            onClick={() => setSelected(sel => ({ ...sel, [i]: true }))}
+                        >
+                            True
+                        </button>
+                        <button
+                            style={{
+                                background: selected[i] === false
+                                    ? (q.answer === false ? "green" : "crimson")
+                                    : "#eee",
+                                color: selected[i] === false ? "#fff" : "#333",
+                                margin: 4, borderRadius: 6, border: "none", padding: "6px 18px"
+                            }}
+                            onClick={() => setSelected(sel => ({ ...sel, [i]: false }))}
+                        >
+                            False
+                        </button>
+                    </div>
+                    {selected[i] !== undefined && selected[i] !== null && (
+                        <div>
+                            {selected[i] === q.answer
+                                ? <span style={{ color: "green" }}>Correct! 🎉</span>
+                                : <span style={{ color: "crimson" }}>Nope! Correct answer: <b>{q.answer ? "True" : "False"}</b></span>
+                            }
+                            {q.explanation &&
+                                <div style={{ color: "#555", marginTop: 4, fontSize: 13 }}>Explanation: {q.explanation}</div>
+                            }
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
