@@ -47,15 +47,12 @@ export default function GamePage() {
 
     function renderWordSearchGrid(spec: any) {
         if (!Array.isArray(spec.grid)) return <div>No grid data.</div>;
-
         const grid = spec.grid.map((row: string | string[]) =>
             Array.isArray(row) ? row : String(row).split("")
         );
-
         return <WordSearchGame grid={grid} words={spec.words || []} />;
     }
 
-    // --- Fetch a random game, and log "game_loaded" event ---
     const fetchRandomGame = async () => {
         setLoading(true);
         setError(null);
@@ -66,7 +63,6 @@ export default function GamePage() {
             const data = await res.json();
             setGame(data);
 
-            // Log analytics event for game loaded
             logAnalytics({
                 type: "game_loaded",
                 gameType: data.type,
@@ -88,7 +84,6 @@ export default function GamePage() {
         // eslint-disable-next-line
     }, []);
 
-    // --- Render different game types simply (can extend each type) ---
     function renderGameBody() {
         if (!game) return null;
         if (game.type === "word_search") {
@@ -98,8 +93,6 @@ export default function GamePage() {
             return <QuizGame spec={game.spec} />;
         }
         if (game.type === "jigsaw") {
-            // Pieces: use a square (e.g., 16, 25, 36, 49, 64)
-            // If your API gives 12 or 24, round to the nearest perfect square for now
             const puzzlePieces = (() => {
                 const valid = [9, 16, 25, 36, 49, 64];
                 const closest = valid.reduce((a, b) =>
@@ -107,7 +100,6 @@ export default function GamePage() {
                 );
                 return closest;
             })();
-
             return (
                 <JigsawPuzzleGame
                     imageUrl={game.spec.imageUrl}
@@ -136,42 +128,76 @@ export default function GamePage() {
     }
 
     return (
-        <div style={{ maxWidth: 480, margin: "auto", padding: "16px" }}>
-            <h2 style={{ textAlign: "center" }}>Random AI-Generated Game</h2>
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
-                <button
-                    onClick={fetchRandomGame}
-                    disabled={loading}
-                    style={{
-                        background: "#4f7cff",
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: 8,
-                        padding: "8px 20px",
-                        fontSize: 16,
-                        marginBottom: 8,
-                        cursor: loading ? "not-allowed" : "pointer"
-                    }}>
-                    {loading ? "Loading..." : "New Game Please"}
-                </button>
-            </div>
-            {error && <div style={{ color: "crimson", marginBottom: 12 }}>{error}</div>}
-            {game && (
-                <div style={{
-                    background: "#fff",
-                    borderRadius: 16,
-                    boxShadow: "0 2px 10px #0001",
-                    padding: 20,
+        <div style={{
+            minHeight: "100vh",
+            background: "linear-gradient(135deg, #f7f8fa 60%, #e4ecfb 100%)",
+            fontFamily: "system-ui, sans-serif",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center"
+        }}>
+            <div style={{
+                maxWidth: 500,
+                width: "100%",
+                margin: "32px auto",
+                background: "#fff",
+                borderRadius: 22,
+                boxShadow: "0 2px 16px #4f7cff18",
+                padding: "32px 18px 34px 18px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center"
+            }}>
+                <h2 style={{
+                    textAlign: "center",
+                    fontSize: 27,
+                    color: "#2b2d42",
+                    fontWeight: 900,
+                    letterSpacing: "-1px",
+                    marginBottom: 14
                 }}>
-                    <div style={{ fontSize: 15, color: "#888", marginBottom: 4 }}>
-                        <b>Type:</b> {game.type} &nbsp; | &nbsp; <b>Lang:</b> {game.lang}
-                    </div>
-                    {renderGameBody()}
+                    Random AI-Generated Game
+                </h2>
+                <div style={{ textAlign: "center", marginBottom: 18 }}>
+                    <button
+                        onClick={fetchRandomGame}
+                        disabled={loading}
+                        style={{
+                            background: "linear-gradient(90deg,#4f7cff,#68e0cf)",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 22,
+                            fontWeight: 700,
+                            fontSize: 18,
+                            padding: "10px 36px",
+                            marginBottom: 6,
+                            boxShadow: "0 2px 8px #4f7cff1a",
+                            cursor: loading ? "not-allowed" : "pointer",
+                            opacity: loading ? 0.65 : 1,
+                            transition: "background .18s"
+                        }}>
+                        {loading ? "Loading..." : "New Game Please"}
+                    </button>
                 </div>
-            )}
-            <div style={{ textAlign: "center", marginTop: 28 }}>
-                <Link to="/">Back to Home</Link>
+                {error && <div style={{ color: "crimson", marginBottom: 14, textAlign: "center" }}>{error}</div>}
+                {game && (
+                    <div style={{
+                        background: "#f8fbff",
+                        borderRadius: 16,
+                        boxShadow: "0 2px 8px #e4ecfb80",
+                        padding: 20,
+                        marginTop: 8,
+                        width: "100%"
+                    }}>
+                        <div style={{ fontSize: 15, color: "#888", marginBottom: 8, textAlign: "center" }}>
+                            <b>Type:</b> {game.type} &nbsp; | &nbsp; <b>Lang:</b> {game.lang}
+                        </div>
+                        {renderGameBody()}
+                    </div>
+                )}
             </div>
+            
         </div>
     );
 }
