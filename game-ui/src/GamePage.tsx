@@ -152,7 +152,7 @@ export default function GamePage() {
                         marginBottom: 8,
                         cursor: loading ? "not-allowed" : "pointer"
                     }}>
-                    {loading ? "Loading..." : "New Game"}
+                    {loading ? "Loading..." : "New Game Please"}
                 </button>
             </div>
             {error && <div style={{ color: "crimson", marginBottom: 12 }}>{error}</div>}
