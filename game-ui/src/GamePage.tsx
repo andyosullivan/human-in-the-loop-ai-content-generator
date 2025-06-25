@@ -8,6 +8,7 @@ import QuizGame from "./QuizGame";
 import SpaceShooterGame from "./SpaceShooterGame";
 import TrueOrFalseGame from "./TrueOrFalseGame";
 import OddOneOutGame from "./OddOneOutGame";
+import JigsawPuzzleGame from "./JigsawPuzzleGame";
 
 // API endpoints:
 const API_URL = "https://39rg9ru5oa.execute-api.eu-west-1.amazonaws.com/prod/random-approved";
@@ -97,16 +98,22 @@ export default function GamePage() {
             return <QuizGame spec={game.spec} />;
         }
         if (game.type === "jigsaw") {
+            // Pieces: use a square (e.g., 16, 25, 36, 49, 64)
+            // If your API gives 12 or 24, round to the nearest perfect square for now
+            const puzzlePieces = (() => {
+                const valid = [9, 16, 25, 36, 49, 64];
+                const closest = valid.reduce((a, b) =>
+                    Math.abs(b - game.spec.pieces) < Math.abs(a - game.spec.pieces) ? b : a
+                );
+                return closest;
+            })();
+
             return (
-                <div>
-                    <h3>Jigsaw Puzzle</h3>
-                    <img
-                        src={game.spec.imageUrl}
-                        alt="Jigsaw"
-                        style={{ maxWidth: "100%", maxHeight: 240, margin: "12px auto", display: "block" }}
-                    />
-                    <div><b>Pieces:</b> {game.spec.pieces}</div>
-                </div>
+                <JigsawPuzzleGame
+                    imageUrl={game.spec.imageUrl}
+                    pieces={puzzlePieces}
+                    size={360}
+                />
             );
         }
         if (game.type === "memory_match") {

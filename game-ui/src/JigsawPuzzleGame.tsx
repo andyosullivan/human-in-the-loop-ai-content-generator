@@ -1,0 +1,103 @@
+import React, { useState, useEffect } from "react";
+
+type Props = {
+    imageUrl: string;
+    pieces: number; // e.g. 16, 25, 36, etc. Must be a perfect square
+    size?: number;  // width/height in px
+};
+
+function shuffleArray<T>(arr: T[]): T[] {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+}
+
+export default function JigsawPuzzleGame({ imageUrl, pieces, size = 360 }: Props) {
+    const gridSize = Math.sqrt(pieces);
+    const [tiles, setTiles] = useState<number[]>([]);
+    const [selected, setSelected] = useState<number | null>(null);
+    const [solved, setSolved] = useState(false);
+
+    // Setup tiles
+    useEffect(() => {
+        const initialTiles = Array.from({ length: pieces }, (_, i) => i);
+        setTiles(shuffleArray(initialTiles));
+        setSolved(false);
+        setSelected(null);
+    }, [imageUrl, pieces]);
+
+    // Check if solved
+    useEffect(() => {
+        setSolved(tiles.every((val, idx) => val === idx));
+    }, [tiles]);
+
+    // Swap handler
+    function handleClick(idx: number) {
+        if (solved) return;
+        if (selected === null) {
+            setSelected(idx);
+        } else if (selected === idx) {
+            setSelected(null);
+        } else {
+            // Swap tiles
+            const newTiles = [...tiles];
+            [newTiles[selected], newTiles[idx]] = [newTiles[idx], newTiles[selected]];
+            setTiles(newTiles);
+            setSelected(null);
+        }
+    }
+
+    // Render a tile
+    function renderTile(tileIdx: number, posIdx: number) {
+        const tileRow = Math.floor(tileIdx / gridSize);
+        const tileCol = tileIdx % gridSize;
+        const tileSize = size / gridSize;
+
+        return (
+            <div
+                key={posIdx}
+                onClick={() => handleClick(posIdx)}
+                style={{
+                    width: tileSize,
+                    height: tileSize,
+                    boxSizing: "border-box",
+                    border: selected === posIdx ? "2px solid #4f7cff" : "1px solid #bbb",
+                    cursor: solved ? "default" : "pointer",
+                    display: "inline-block",
+                    backgroundImage: `url(${imageUrl})`,
+                    backgroundPosition: `-${tileCol * tileSize}px -${tileRow * tileSize}px`,
+                    backgroundSize: `${size}px ${size}px`,
+                    opacity: solved ? 0.8 : 1,
+                    transition: "border 0.2s"
+                }}
+            />
+        );
+    }
+
+    return (
+        <div>
+            <h4>Jigsaw Puzzle</h4>
+            <div
+                style={{
+                    width: size,
+                    height: size,
+                    display: "grid",
+                    gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+                    gridTemplateRows: `repeat(${gridSize}, 1fr)`,
+                    gap: 0,
+                    margin: "auto",
+                    userSelect: "none"
+                }}
+            >
+                {tiles.map((tileIdx, i) => renderTile(tileIdx, i))}
+            </div>
+            {solved && <div style={{ color: "green", fontWeight: "bold", marginTop: 10 }}>🎉 You solved it!</div>}
+            <div style={{ fontSize: 13, marginTop: 8 }}>
+                Click two tiles to swap them. Complete the image to win!
+            </div>
+        </div>
+    );
+}

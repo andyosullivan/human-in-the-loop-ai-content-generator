@@ -1,9 +1,9 @@
 // lambda/generator.ts
-import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { v4 as uuidv4 } from "uuid";
-import { Buffer } from "buffer";
+import {BedrockRuntimeClient, InvokeModelCommand} from "@aws-sdk/client-bedrock-runtime";
+import {DynamoDBClient, PutItemCommand} from "@aws-sdk/client-dynamodb";
+import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
+import {v4 as uuidv4} from "uuid";
+import {Buffer} from "buffer";
 
 // ----- config from env -----
 const TABLE_NAME = process.env.ITEMS_TABLE_NAME!;
@@ -18,6 +18,15 @@ const PUZZLE_IMAGES_CLOUDFRONT_URL = process.env.PUZZLE_IMAGES_CLOUDFRONT_URL!;
 const bedrock = new BedrockRuntimeClient({ region: REGION });
 const ddb = new DynamoDBClient({ region: REGION });
 const s3 = new S3Client({ region: REGION });
+
+//backup images in case the generation fails
+const BACKUP_JIGSAW_IMAGES = [
+    "https://d6kwpd0i8hxdp.cloudfront.net/backup-jigsaws/animal1.jpg",
+    "https://d6kwpd0i8hxdp.cloudfront.net/backup-jigsaws/animal2.jpg",
+    "https://d6kwpd0i8hxdp.cloudfront.net/backup-jigsaws/animal3.jpg",
+    "https://d6kwpd0i8hxdp.cloudfront.net/backup-jigsaws/animal4.jpg",
+    "https://d6kwpd0i8hxdp.cloudfront.net/backup-jigsaws/animal5.jpg",
+];
 
 
 // ----- schema (trimmed – keep keys in sync with your latest) -----
@@ -223,17 +232,13 @@ If the type is not recognized, return an object with "status": "REJECTED" and a 
     // If jigsaw, generate and upload AI art!
     if (item.type === "jigsaw") {
         try {
-            // Make a nice puzzle prompt:
-            //const theme = item?.spec?.theme || "colorful puzzle for a game";
-            const pieces = item?.spec?.pieces || 24;
-            const promptText = `A bright, fun, detailed illustration of a cute animal for a ${pieces}-piece jigsaw puzzle, for a kids/family game. Make sure there are NO words or text in the image.`;
-            // This call may take ~10 seconds!
-            const imgUrl = await generateAndStoreJigsawImage(promptText, itemId);
-            item.spec.imageUrl = imgUrl;
+            // AI art generation as before
+            const promptText = `A bright, fun, detailed illustration of a cute animal OR a fun scene with animals. Make sure there are NO words or text in the image.`;
+            item.spec.imageUrl = await generateAndStoreJigsawImage(promptText, itemId);
         } catch (err) {
             console.error("Failed to generate/upload jigsaw image:", err);
-            // fallback to placeholder
-            item.spec.imageUrl = "https://picsum.photos/400/300";
+            // Fallback to a random backup image
+            item.spec.imageUrl = BACKUP_JIGSAW_IMAGES[Math.floor(Math.random() * BACKUP_JIGSAW_IMAGES.length)];
         }
     }
 
