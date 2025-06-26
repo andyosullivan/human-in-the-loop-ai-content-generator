@@ -101,7 +101,7 @@ export default function MemoryMatchGame({ spec }: { spec: MemoryMatchSpec }) {
             display: "flex", flexDirection: "column", alignItems: "center",
             fontFamily: "system-ui", margin: "1rem 0"
         }}>
-            <h2 style={{ marginBottom: 8 }}>Memory Match</h2>
+            <h2 style={{ marginTop: 0, marginBottom: 8 }}>Memory Match</h2>
             <div style={{ marginBottom: 12, color: "#555", fontSize: 16 }}>
                 Match each word with a word that relates to it! Moves: <b>{moves}</b>
                 <button

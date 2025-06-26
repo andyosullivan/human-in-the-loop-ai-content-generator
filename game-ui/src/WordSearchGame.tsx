@@ -108,6 +108,9 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
 
     return (
         <div onMouseLeave={() => setIsMouseDown(false)} onMouseUp={handleMouseUp}>
+            <h4 style={{ marginTop: 0, textAlign: "center", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>
+                Wordsearch
+            </h4>
             <table style={{ borderCollapse: "collapse", margin: "1rem 0" }}>
                 <tbody>
                 {grid.map((row, i) => (

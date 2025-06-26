@@ -64,6 +64,9 @@ export default function QuizGame({ spec }: { spec: QuizMCQSpec }) {
             background: "#fff",
             boxShadow: "0 3px 18px #0001"
         }}>
+            <h4 style={{ marginTop: 0, textAlign: "center", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>
+                Quiz!
+            </h4>
             <div style={{ color: "#666", marginBottom: 12, fontSize: 15 }}>
                 Question <b>{current + 1}</b> of <b>{questions.length}</b>
             </div>

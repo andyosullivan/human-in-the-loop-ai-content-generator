@@ -4,7 +4,7 @@ export default function OddOneOutGame({ spec }: { spec: any }) {
     const [selected, setSelected] = React.useState<{ [k: number]: number | null }>({});
     return (
         <div>
-            <h3>Odd One Out</h3>
+            <h2 style={{ marginTop: 0, textAlign: "center" }}>Odd One Out</h2>
             {spec.rounds?.map((round: any, i: number) => (
                 <div key={i} style={{ marginBottom: 18 }}>
                     <div><b>Round {i + 1}:</b></div>

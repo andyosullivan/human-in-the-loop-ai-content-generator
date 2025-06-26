@@ -5,7 +5,7 @@ export default function TrueOrFalseGame({ spec }: { spec: any }) {
 
     return (
         <div>
-            <h3>True or False</h3>
+            <h2 style={{ marginTop: 0, textAlign: "center"}}>True or False</h2>
             {spec.questions?.map((q: any, i: number) => (
                 <div key={i} style={{ marginBottom: 18 }}>
                     <div style={{ fontWeight: "bold" }}>Q{i + 1}: {q.statement}</div>

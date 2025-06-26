@@ -154,6 +154,39 @@ export default function ReviewPage() {
                     <Link to="/prompt-config" style={{
                         marginLeft: 24, color: "#888", fontWeight: 500, textDecoration: "none"
                     }}>Prompt-Config</Link>
+                    <a
+                        href="https://newgameplease.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            marginLeft: 24,
+                            color: "#888",
+                            fontWeight: 500,
+                            textDecoration: "none",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "0 8px"
+                        }}
+                    >
+                        Play App
+                        <svg
+                            width="17"
+                            height="17"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#888"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            style={{ marginLeft: 2, verticalAlign: "middle" }}
+                        >
+                            <path d="M18 13v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                            <polyline points="15 3 21 3 21 9"/>
+                            <line x1="10" y1="14" x2="21" y2="3"/>
+                        </svg>
+                    </a>
+
                 </div>
                 <button
                     onClick={logout}
@@ -200,7 +233,7 @@ export default function ReviewPage() {
                                 cursor: requesting ? "not-allowed" : "pointer", opacity: requesting ? 0.6 : 1,
                                 transition: "background .18s"
                             }}>
-                        {requesting ? "Requesting…" : "Request New Items"}
+                        {requesting ? "Requesting…" : "Generate New Items"}
                     </button>
                     <button style={{
                         background: "#fff",
@@ -215,7 +248,7 @@ export default function ReviewPage() {
 
                 {/* Stats Table */}
                 <div style={{ margin: "32px 0 42px 0", background: "#fff", borderRadius: 18, boxShadow: "0 2px 8px #0001", padding: "32px 24px" }}>
-                    <h3 style={{ marginBottom: 20, fontWeight: 700, fontSize: 20 }}>Database Stats</h3>
+                    <h3 style={{ marginBottom: 20, fontWeight: 700, fontSize: 20 }}>Generated Game Item Stats</h3>
                     {loadingStats && <p>Loading stats…</p>}
                     {errorStats && <p style={{ color: "red" }}>{errorStats}</p>}
                     {!loadingStats && !errorStats && (

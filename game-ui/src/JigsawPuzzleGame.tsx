@@ -79,7 +79,9 @@ export default function JigsawPuzzleGame({ imageUrl, pieces, size = 360 }: Props
 
     return (
         <div>
-            <h4>Jigsaw Puzzle</h4>
+            <h4 style={{ marginTop: 0, textAlign: "center", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>
+                Jigsaw Puzzle
+            </h4>
             <div
                 style={{
                     width: size,
@@ -95,7 +97,7 @@ export default function JigsawPuzzleGame({ imageUrl, pieces, size = 360 }: Props
                 {tiles.map((tileIdx, i) => renderTile(tileIdx, i))}
             </div>
             {solved && <div style={{ color: "green", fontWeight: "bold", marginTop: 10 }}>🎉 You solved it!</div>}
-            <div style={{ fontSize: 13, marginTop: 8 }}>
+            <div style={{ textAlign: "center", fontSize: 13, marginTop: 8 }}>
                 Click two tiles to swap them. Complete the image to win!
             </div>
         </div>
