@@ -44,4 +44,4 @@ The project has two main solutions:
       - LogAnalytics - posts game stats to the analytics dynamodb table.
       - RandomApproved - gets a random game item.
 
-Both stacks are deployed using CDK.
+**Both stacks are deployed using CDK.**
