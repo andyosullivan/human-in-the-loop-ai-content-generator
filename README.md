@@ -23,6 +23,7 @@ The project has two main solutions:
 #### Screenshot of the ability to view the JSON code of a game item to be approved or rejected.
 <img width="1206" alt="Screenshot 2025-06-26 at 13 05 56" src="https://github.com/user-attachments/assets/106e0e88-2c23-412e-a544-0c968f318ba4" />
 
+#### Architecture:
 - React app, hosted on **S3**, fronted by **Cloudfront**
     - User authentication using **Cognito**
     - Reviewer screen - where admin users can generate new game items, approve or reject them, and view game item stats.
@@ -48,6 +49,7 @@ The project has two main solutions:
 
 ## Sample Consumer app
 
+#### Architecture:
 - React app hosted on **S3**, fronted by **Cloudfront**
   - This is an unauthenticated app to play games (which use the generated and approved game items).
   - Just hit the "New Game Please" button to get a new game to play!
