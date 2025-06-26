@@ -41,7 +41,7 @@ The project has two main solutions:
       - Just hit the "New Game Please" button to get a new game to play!
       - A custom domain name https://newgameplease.com/ registered via **Route 53** and uses a hosted zone for DNS config.
 - 2 **Lambdas**
-      - LogAnalytics - posts game stats to the analytics dynamodb table.
-      - RandomApproved - gets a random game item.
+  - LogAnalytics - posts game stats to the analytics dynamodb table.
+  - RandomApproved - gets a random game item.
 
 **Both stacks are deployed using CDK.**
