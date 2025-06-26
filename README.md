@@ -32,3 +32,16 @@ The project has two main solutions:
     - ItemsTable - to store game items
     - AnalyticsTable - to store analytics from the game app
     - PromptConfig - to store the prompt used to generate the game items
+- A **S3 Bucket** to store generated images (used in one of the game types) - this is fronted by **Cloudfront**, secured via **OAI**.
+
+## Sample Consumer app
+
+- React app hosted on **S3**, fronted by **Cloudfront**
+      - This is an unauthenticated app to play games (which use the generated and approved game items).
+      - Just hit the "New Game Please" button to get a new game to play!
+      - A custom domain name https://newgameplease.com/ registered via **Route 53** and uses a hosted zone for DNS config.
+- 2 **Lambdas**
+      - LogAnalytics - posts game stats to the analytics dynamodb table.
+      - RandomApproved - gets a random game item.
+
+Both stacks are deployed using CDK.
