@@ -33,7 +33,6 @@ export class AwslambdahackathonStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // Add this helper function somewhere in your stack file:
     function addCorsOptions(apiResource: Resource) {
       apiResource.addMethod('OPTIONS', new MockIntegration({
         integrationResponses: [{
@@ -60,7 +59,6 @@ export class AwslambdahackathonStack extends Stack {
       });
     }
 
-    // DynamoDB table
     this.itemsTable = new Table(this, 'ItemsTable', {
       partitionKey: { name: 'itemId', type: AttributeType.STRING },
       sortKey:      { name: 'version', type: AttributeType.NUMBER },
@@ -74,15 +72,20 @@ export class AwslambdahackathonStack extends Stack {
       sortKey: { name: "createdAt", type: AttributeType.STRING }
     });
 
-    // --- Analytics Table for usage tracking ---
     this.analyticsTable = new Table(this, 'AnalyticsTable', {
-      partitionKey: { name: 'pk', type: AttributeType.STRING }, // e.g. 'date#2024-06-22'
-      sortKey:      { name: 'sk', type: AttributeType.STRING }, // e.g. 'game#itemId'
+      partitionKey: { name: 'pk', type: AttributeType.STRING },
+      sortKey:      { name: 'sk', type: AttributeType.STRING },
       billingMode:  BillingMode.PAY_PER_REQUEST,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    // --- Cognito User Pool for Admin Auth ---
+    // PromptConfig Table for AI prompt editing
+    const promptConfigTable = new Table(this, "PromptConfig", {
+      partitionKey: { name: "pk", type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
     const userPool = new cognito.UserPool(this, "AdminUserPool", {
       selfSignUpEnabled: false,
       signInAliases: { email: true },
@@ -93,15 +96,12 @@ export class AwslambdahackathonStack extends Stack {
       generateSecret: false,
     });
 
-    // --- API Gateway ---
     const api = new RestApi(this, 'HelloApi');
 
-    // Cognito Authorizer for protected admin endpoints
     const authorizer = new CognitoUserPoolsAuthorizer(this, "CognitoAuthorizer", {
       cognitoUserPools: [userPool]
     });
 
-    // Lambdas as before
     const listPendingFn = new NodejsFunction(this, "ListPendingFn", {
       entry: "lambda/listPending.ts",
       runtime: Runtime.NODEJS_20_X,
@@ -125,31 +125,24 @@ export class AwslambdahackathonStack extends Stack {
     });
     this.itemsTable.grantReadWriteData(generatorFn);
 
-    // Create the S3 bucket for puzzle images
-    // 1. Secure S3 bucket - NO publicReadAccess, block all public access
     const puzzleImagesBucket = new Bucket(this, "PuzzleImagesBucket", {
       removalPolicy: RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL, // Important: secure!
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       cors: [
         {
           allowedMethods: [HttpMethods.GET],
-          allowedOrigins: ["*"], // or restrict to your game CloudFront domain for even more security
+          allowedOrigins: ["*"],
           allowedHeaders: ["*"],
         }
       ]
     });
 
-    // 2. Allow ONLY your Lambda to upload images
-    puzzleImagesBucket.grantPut(generatorFn); // assumes generatorFn is your Lambda
+    puzzleImagesBucket.grantPut(generatorFn);
 
-    // 3. Create an OAI (Origin Access Identity) for CloudFront to read images
     const imagesOAI = new OriginAccessIdentity(this, "PuzzleImagesOAI");
-
-    // 4. Grant read access to OAI
     puzzleImagesBucket.grantRead(imagesOAI);
 
-    // 5. Create a CloudFront distribution for serving images
     const puzzleImagesCF = new Distribution(this, "PuzzleImagesDistribution", {
       defaultBehavior: {
         origin: new S3Origin(puzzleImagesBucket, { originAccessIdentity: imagesOAI }),
@@ -157,20 +150,15 @@ export class AwslambdahackathonStack extends Stack {
       }
     });
 
-    // 6. Output the CloudFront domain for use in your app/Lambda
     new CfnOutput(this, "PuzzleImagesCFDomain", {
       value: "https://" + puzzleImagesCF.domainName,
       description: "CloudFront distribution for puzzle images (use this as image URL base)"
     });
 
-
-
     generatorFn.addEnvironment("PUZZLE_IMAGES_BUCKET", puzzleImagesBucket.bucketName);
     generatorFn.addEnvironment("BEDROCK_IMAGE_MODEL_ID", "amazon.titan-image-generator-v1");
     generatorFn.addEnvironment("PUZZLE_IMAGES_CLOUDFRONT_URL", "https://d6kwpd0i8hxdp.cloudfront.net");
 
-
-    // Step Functions for bulk generation
     const generatorTask = new LambdaInvoke(this, 'InvokeGenerator', {
       lambdaFunction: generatorFn,
       payload: TaskInput.fromObject({
@@ -235,9 +223,29 @@ export class AwslambdahackathonStack extends Stack {
     });
     this.analyticsTable.grantReadData(listAnalyticsFn);
 
-    // --- API endpoints ---
+    // === PROMPT CONFIG LAMBDAS ===
+    const getPromptConfigFn = new NodejsFunction(this, "GetPromptConfigFn", {
+      entry: "lambda/getPromptConfig.ts",
+      runtime: Runtime.NODEJS_20_X,
+      timeout: Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        PROMPT_CONFIG_TABLE: promptConfigTable.tableName,
+      }
+    });
+    promptConfigTable.grantReadData(getPromptConfigFn);
 
-    // PROTECTED ADMIN ENDPOINTS (require Cognito JWT)
+    const setPromptConfigFn = new NodejsFunction(this, "SetPromptConfigFn", {
+      entry: "lambda/setPromptConfig.ts",
+      runtime: Runtime.NODEJS_20_X,
+      timeout: Duration.seconds(10),
+      memorySize: 128,
+      environment: {
+        PROMPT_CONFIG_TABLE: promptConfigTable.tableName,
+      }
+    });
+    promptConfigTable.grantWriteData(setPromptConfigFn);
+
     function protect(resource: Resource, lambda: NodejsFunction, method: string = "POST") {
       resource.addMethod(method, new LambdaIntegration(lambda), {
         authorizer,
@@ -246,9 +254,11 @@ export class AwslambdahackathonStack extends Stack {
       addCorsOptions(resource);
     }
 
+    generatorFn.addEnvironment("PROMPT_CONFIG_TABLE", promptConfigTable.tableName);
+    promptConfigTable.grantReadData(generatorFn);
+
     const generateResource = api.root.addResource('generate');
-    generateResource.addMethod('POST', new LambdaIntegration(generatorFn)); // Public (if you want)
-    addCorsOptions(generateResource);
+    protect(generateResource, generatorFn, "POST");
 
     const reviewResource = api.root.addResource('review');
     protect(reviewResource, reviewerFn, "POST");
@@ -265,7 +275,17 @@ export class AwslambdahackathonStack extends Stack {
     const analyticsResource = api.root.addResource('analytics');
     protect(analyticsResource, listAnalyticsFn, "GET");
 
-    // --- S3 static site bucket ---
+    const promptConfigResource = api.root.addResource("prompt-config");
+    promptConfigResource.addMethod("GET", new LambdaIntegration(getPromptConfigFn), {
+      authorizer,
+      authorizationType: AuthorizationType.COGNITO,
+    });
+    promptConfigResource.addMethod("POST", new LambdaIntegration(setPromptConfigFn), {
+      authorizer,
+      authorizationType: AuthorizationType.COGNITO,
+    });
+    addCorsOptions(promptConfigResource);
+
     const siteBucket = new Bucket(this, "SiteBucket", {
       websiteIndexDocument: "index.html",
       publicReadAccess: true,
@@ -322,9 +342,13 @@ export class AwslambdahackathonStack extends Stack {
       description: "The CloudFront URL of the React review UI"
     });
 
-    // --- Cognito outputs for frontend ---
     new CfnOutput(this, "CognitoUserPoolId", { value: userPool.userPoolId });
     new CfnOutput(this, "CognitoUserPoolClientId", { value: userPoolClient.userPoolClientId });
     new CfnOutput(this, "ApiUrl", { value: api.url });
+
+    new CfnOutput(this, "PromptConfigTableName", {
+      value: promptConfigTable.tableName,
+      description: "Table for editable AI prompt config",
+    });
   }
 }

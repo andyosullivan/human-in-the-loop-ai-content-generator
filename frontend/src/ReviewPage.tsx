@@ -151,6 +151,9 @@ export default function ReviewPage() {
                     <Link to="/analytics" style={{
                         marginLeft: 24, color: "#888", fontWeight: 500, textDecoration: "none"
                     }}>Analytics</Link>
+                    <Link to="/prompt-config" style={{
+                        marginLeft: 24, color: "#888", fontWeight: 500, textDecoration: "none"
+                    }}>Prompt-Config</Link>
                 </div>
                 <button
                     onClick={logout}

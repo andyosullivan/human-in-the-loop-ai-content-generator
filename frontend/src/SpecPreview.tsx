@@ -33,15 +33,6 @@ type TrueOrFalseSpec = {
     questions: { statement: string, answer: boolean, explanation?: string }[]
 };
 
-type SupportedSpecs =
-    | WordSearchSpec
-    | QuizMCQSpec
-    | MemoryMatchSpec
-    | SpaceShooterSpec
-    | JigsawSpec
-    | OddOneOutSpec
-    | TrueOrFalseSpec;
-
 export default function SpecPreview({ type, spec }: { type: string, spec: any }) {
     if (!spec || typeof spec !== "object") return <div>No preview available.</div>;
 
