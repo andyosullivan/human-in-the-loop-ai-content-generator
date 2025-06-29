@@ -11,7 +11,19 @@ The project has two main solutions:
 - A mobile responsive webpage to be a "sample consumer" for the content generator i.e. you can use it to play the games.
 
 ## AI Content Generator app
+#### Screenshot of admin page with Game Item Stats:
+<img width="1208" alt="Screenshot 2025-06-26 at 13 02 57" src="https://github.com/user-attachments/assets/4ed34f76-f946-4def-b2e1-28e83cd2725d" />
 
+#### Screenshot of approving a puzzle game:
+<img width="1206" alt="Screenshot 2025-06-26 at 13 03 57" src="https://github.com/user-attachments/assets/4ce68790-139d-4547-8fe9-59978af36b9f" />
+
+#### Screenshot of approving an Odd One Out game:
+<img width="1206" alt="Screenshot 2025-06-26 at 13 04 08" src="https://github.com/user-attachments/assets/edaba03b-be5b-4acb-a798-4184aeb7ab77" />
+
+#### Screenshot of the ability to view the JSON code of a game item to be approved or rejected.
+<img width="1206" alt="Screenshot 2025-06-26 at 13 05 56" src="https://github.com/user-attachments/assets/106e0e88-2c23-412e-a544-0c968f318ba4" />
+
+#### Architecture:
 - React app, hosted on **S3**, fronted by **Cloudfront**
     - User authentication using **Cognito**
     - Reviewer screen - where admin users can generate new game items, approve or reject them, and view game item stats.
@@ -33,13 +45,15 @@ The project has two main solutions:
     - AnalyticsTable - to store analytics from the game app
     - PromptConfig - to store the prompt used to generate the game items
 - A **S3 Bucket** to store generated images (used in one of the game types) - this is fronted by **Cloudfront**, secured via **OAI**.
+- SSL cert for Cloudfront generated using **ACM**
 
 ## Sample Consumer app
 
+#### Architecture:
 - React app hosted on **S3**, fronted by **Cloudfront**
-      - This is an unauthenticated app to play games (which use the generated and approved game items).
-      - Just hit the "New Game Please" button to get a new game to play!
-      - A custom domain name https://newgameplease.com/ registered via **Route 53** and uses a hosted zone for DNS config.
+  - This is an unauthenticated app to play games (which use the generated and approved game items).
+  - Just hit the "New Game Please" button to get a new game to play!
+  - A custom domain name https://newgameplease.com/ registered via **Route 53** and uses a hosted zone for DNS config.
 - 2 **Lambdas**
   - LogAnalytics - posts game stats to the analytics dynamodb table.
   - RandomApproved - gets a random game item.
