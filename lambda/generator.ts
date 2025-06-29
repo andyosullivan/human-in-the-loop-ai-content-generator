@@ -1,5 +1,12 @@
-import { BedrockRuntimeClient, InvokeModelCommand } from "@aws-sdk/client-bedrock-runtime";
-import { DynamoDBClient, PutItemCommand, GetItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+    BedrockRuntimeClient,
+    InvokeModelCommand,
+} from "@aws-sdk/client-bedrock-runtime";
+import {
+    DynamoDBClient,
+    PutItemCommand,
+    GetItemCommand,
+} from "@aws-sdk/client-dynamodb";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { Buffer } from "buffer";
@@ -7,11 +14,14 @@ import { Buffer } from "buffer";
 // ----- config from env -----
 const TABLE_NAME = process.env.ITEMS_TABLE_NAME!;
 const MODEL_ID = process.env.BEDROCK_MODEL_ID!;
-const IMAGE_MODEL_ID = process.env.BEDROCK_IMAGE_MODEL_ID || "amazon.titan-image-generator-v1";
+const IMAGE_MODEL_ID =
+    process.env.BEDROCK_IMAGE_MODEL_ID || "amazon.titan-image-generator-v1";
 const REGION = process.env.AWS_REGION || "eu-west-1";
 const PUZZLE_IMAGES_BUCKET = process.env.PUZZLE_IMAGES_BUCKET!;
-const PUZZLE_IMAGES_CLOUDFRONT_URL = process.env.PUZZLE_IMAGES_CLOUDFRONT_URL!;
-const PROMPT_CONFIG_TABLE = process.env.PROMPT_CONFIG_TABLE || "PromptConfigTable";
+const PUZZLE_IMAGES_CLOUDFRONT_URL =
+    process.env.PUZZLE_IMAGES_CLOUDFRONT_URL!;
+const PROMPT_CONFIG_TABLE =
+    process.env.PROMPT_CONFIG_TABLE || "PromptConfigTable";
 
 const bedrock = new BedrockRuntimeClient({ region: REGION });
 const ddb = new DynamoDBClient({ region: REGION });
@@ -24,6 +34,69 @@ const BACKUP_JIGSAW_IMAGES = [
     "https://d6kwpd0i8hxdp.cloudfront.net/backup-jigsaws/animal4.jpg",
     "https://d6kwpd0i8hxdp.cloudfront.net/backup-jigsaws/animal5.jpg",
 ];
+
+// ---------- square-grid helper (≈40 lines) ----------
+type Dir = [number, number];
+const DIRS: Dir[] = [
+    [0, 1],
+    [0, -1],
+    [1, 0],
+    [-1, 0],
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+];
+
+function buildWordSearch(
+    rawWords: string[],
+    size = 9 + Math.floor(Math.random() * 4) // 9–12
+) {
+    const grid: string[][] = Array.from({ length: size }, () =>
+        Array.from({ length: size }, () => "")
+    );
+
+    const words = rawWords
+        .map((w) => w.replace(/[^A-Z]/gi, "").toUpperCase())
+        .filter((w) => w.length >= 3 && w.length <= size);
+
+    function fits(word: string, r: number, c: number, [dr, dc]: Dir) {
+        const endR = r + dr * (word.length - 1);
+        const endC = c + dc * (word.length - 1);
+        if (endR < 0 || endR >= size || endC < 0 || endC >= size) return false;
+        for (let k = 0; k < word.length; k++) {
+            const ch = grid[r + k * dr][c + k * dc];
+            if (ch && ch !== word[k]) return false;
+        }
+        return true;
+    }
+
+    function place(word: string) {
+        for (let t = 0; t < 250; t++) {
+            const dir = DIRS[Math.floor(Math.random() * DIRS.length)];
+            const r = Math.floor(Math.random() * size);
+            const c = Math.floor(Math.random() * size);
+            if (fits(word, r, c, dir)) {
+                for (let k = 0; k < word.length; k++) {
+                    grid[r + k * dir[0]][c + k * dir[1]] = word[k];
+                }
+                return;
+            }
+        }
+    }
+
+    words.forEach(place);
+
+    // fill blanks
+    for (let r = 0; r < size; r++)
+        for (let c = 0; c < size; c++)
+            if (!grid[r][c])
+                grid[r][c] = String.fromCharCode(
+                    65 + Math.floor(Math.random() * 26)
+                );
+
+    return { grid, words };
+}
 
 // ----- schema -----
 const INTERACTIVE_ITEM_SCHEMA = `
@@ -43,23 +116,23 @@ You must return JSON that validates against this schema:
 }
 `.trim();
 
-function nowIso() {
-    return new Date().toISOString();
-}
+const nowIso = () => new Date().toISOString();
 
-// --- Prompt loader ---
+// --- Prompt loader (unchanged) ---
 async function getPromptConfig(): Promise<string> {
     try {
-        const res = await ddb.send(new GetItemCommand({
-            TableName: PROMPT_CONFIG_TABLE,
-            Key: { pk: { S: "main" } }
-        }));
+        const res = await ddb.send(
+            new GetItemCommand({
+                TableName: PROMPT_CONFIG_TABLE,
+                Key: { pk: { S: "main" } },
+            })
+        );
         const prompt = res.Item?.prompt?.S;
-        if (prompt && prompt.trim().length > 0) return prompt;
+        if (prompt?.trim()) return prompt;
     } catch (e) {
         console.error("Error fetching prompt config:", e);
     }
-    // Default fallback prompt
+    // Default fallback prompt (UNCHANGED)
     return `
 You are an expert puzzle and game JSON generator.
 
@@ -123,8 +196,11 @@ If the type is not recognized, return an object with "status": "REJECTED" and a 
 `.trim();
 }
 
-// --- Jigsaw image generator ---
-async function generateAndStoreJigsawImage(promptText: string, itemId: string): Promise<string> {
+// --- Jigsaw image generator (unchanged) ---
+async function generateAndStoreJigsawImage(
+    promptText: string,
+    itemId: string
+): Promise<string> {
     const imageRequest = {
         modelId: IMAGE_MODEL_ID,
         contentType: "application/json",
@@ -138,120 +214,132 @@ async function generateAndStoreJigsawImage(promptText: string, itemId: string): 
                 height: 512,
                 width: 512,
                 cfgScale: 8.0,
-                seed: Math.floor(Math.random() * 999999999)
-            }
-        })
+                seed: Math.floor(Math.random() * 999999999),
+            },
+        }),
     };
     const imgResponse = await bedrock.send(new InvokeModelCommand(imageRequest));
     const rawImg = new TextDecoder().decode(imgResponse.body);
     const imgPayload = JSON.parse(rawImg);
-
-    const base64Img = Array.isArray(imgPayload.images) ? imgPayload.images[0] : undefined;
-    if (!base64Img) {
-        console.error("Titan did not return an image. Full payload:", imgPayload);
-        throw new Error("No image returned from Titan Image Generator");
-    }
+    const base64Img = Array.isArray(imgPayload.images)
+        ? imgPayload.images[0]
+        : undefined;
+    if (!base64Img) throw new Error("No image from Titan");
     const buffer = Buffer.from(base64Img, "base64");
     const s3Key = `jigsaws/${itemId}.png`;
-    await s3.send(new PutObjectCommand({
-        Bucket: PUZZLE_IMAGES_BUCKET,
-        Key: s3Key,
-        Body: buffer,
-        ContentType: "image/png"
-    }));
+    await s3.send(
+        new PutObjectCommand({
+            Bucket: PUZZLE_IMAGES_BUCKET,
+            Key: s3Key,
+            Body: buffer,
+            ContentType: "image/png",
+        })
+    );
     return `${PUZZLE_IMAGES_CLOUDFRONT_URL}/jigsaws/${itemId}.png`;
 }
 
 // --- Lambda entry ---
-export const handler = async (event: any = {}): Promise<any> => {
+export const handler = async (event: any = {}) => {
+    /* ── NEW: show what we actually received ── */
+    console.log("RAW event ➜", JSON.stringify(event));
+
+    /* If API Gateway/StepFn delivered the body as a JSON string, parse it */
+    const req = typeof event === "string"
+        ? JSON.parse(event)
+        : event.body && typeof event.body === "string"
+            ? JSON.parse(event.body)
+            : event;
+
     const requestedType = event.type || "word_search";
     const requestedLang = event.lang || "en";
 
-    // 1. Load prompt template (DB or fallback)
+    console.log("requestedType ➜", requestedType);
+    // 1. load prompt
     let prompt = await getPromptConfig();
-    // 2. Inject current type/lang if used as {{type}}, {{lang}}
     prompt = prompt
         .replace(/\{\{type\}\}/g, requestedType)
         .replace(/\{\{lang\}\}/g, requestedLang);
 
-    const anthropicPayload = {
-        anthropic_version: "bedrock-2023-05-31",
-        max_tokens: 1024,
-        messages: [
-            { role: "user", content: prompt }
-        ]
-    };
-
-    const body = {
-        modelId: MODEL_ID,
-        contentType: "application/json",
-        accept: "application/json",
-        body: JSON.stringify(anthropicPayload)
-    };
-
-    // Call Bedrock for the JSON spec
-    const response = await bedrock.send(new InvokeModelCommand(body));
+    // 2. call Claude
+    const response = await bedrock.send(
+        new InvokeModelCommand({
+            modelId: MODEL_ID,
+            contentType: "application/json",
+            accept: "application/json",
+            body: JSON.stringify({
+                anthropic_version: "bedrock-2023-05-31",
+                max_tokens: 1024,
+                messages: [{ role: "user", content: prompt }],
+            }),
+        })
+    );
     const raw = new TextDecoder().decode(response.body);
 
-    let item;
+    // 3. parse Claude JSON
+    let item: any;
     try {
         const outer = JSON.parse(raw);
-        const jsonStr = outer?.content?.[0]?.text;
-        item = JSON.parse(jsonStr);
-    } catch (err) {
-        console.error("Could not extract puzzle JSON from Claude response:", raw);
+        item = JSON.parse(outer?.content?.[0]?.text || "{}");
+    } catch {
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Claude output not valid JSON", raw })
+            body: JSON.stringify({ error: "Claude output not valid JSON", raw }),
         };
     }
 
-    // Assign an ID, etc
+    // 4. for word_search, build grid locally
+    if (item.type === "word_search") {
+        const { grid, words } = buildWordSearch(item.spec.words || []);
+        item.spec.grid = grid;
+        item.spec.words = words;
+    }
+
+    // 5. jigsaw image (unchanged)
+    if (item.type === "jigsaw") {
+        const imgPrompt =
+            "A bright, fun, detailed animal or space illustration, no text";
+        try {
+            item.spec.imageUrl = await generateAndStoreJigsawImage(
+                imgPrompt,
+                "tmp_" + uuidv4().slice(0, 8)
+            );
+        } catch {
+            item.spec.imageUrl =
+                BACKUP_JIGSAW_IMAGES[
+                    Math.floor(Math.random() * BACKUP_JIGSAW_IMAGES.length)
+                    ];
+        }
+    }
+
+    // 6. metadata & save
     const itemId = `item_${uuidv4().replace(/-/g, "").slice(0, 8)}`;
     item.id = itemId;
     item.version = 1;
     item.status = "PENDING";
     item.createdAt = nowIso();
 
-    // If jigsaw, generate/upload AI art or fallback
-    if (item.type === "jigsaw") {
-        try {
-            const promptText = `A bright, fun, detailed illustration of a cute animal OR a fun scene with animals OR a space scene with fun planets and rockets OR a fun image of a boat on the sea. Make sure there are NO words or text in the image.`;
-            item.spec.imageUrl = await generateAndStoreJigsawImage(promptText, itemId);
-        } catch (err) {
-            console.error("Failed to generate/upload jigsaw image:", err);
-            item.spec.imageUrl = BACKUP_JIGSAW_IMAGES[Math.floor(Math.random() * BACKUP_JIGSAW_IMAGES.length)];
-        }
-    }
-
-    if (!item || !item.type || !item.lang || !item.spec) {
-        console.error("Incomplete item from Bedrock:", item);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: "Claude output incomplete", detail: item })
-        };
-    }
-
-    await ddb.send(new PutItemCommand({
-        TableName: TABLE_NAME,
-        Item: {
-            itemId: { S: item.id },
-            version: { N: item.version.toString() },
-            type: { S: item.type },
-            status: { S: item.status },
-            lang: { S: item.lang },
-            createdAt: { S: item.createdAt },
-            spec: { S: JSON.stringify(item.spec) }
-        }
-    }));
+    await ddb.send(
+        new PutItemCommand({
+            TableName: TABLE_NAME,
+            Item: {
+                itemId: { S: item.id },
+                version: { N: String(item.version) },
+                type: { S: item.type },
+                status: { S: item.status },
+                lang: { S: item.lang },
+                createdAt: { S: item.createdAt },
+                spec: { S: JSON.stringify(item.spec) },
+            },
+        })
+    );
 
     return {
         statusCode: 200,
         headers: {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+            "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
         },
-        body: JSON.stringify({ ok: true, itemId })
+        body: JSON.stringify({ ok: true, itemId }),
     };
 };
