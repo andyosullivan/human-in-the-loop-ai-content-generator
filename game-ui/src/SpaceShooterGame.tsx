@@ -48,14 +48,13 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
         lives.current = 3;
         setScore(0);
 
-        // build enemies - always start them *safely high up* and avoid right wall spawn
+        // build enemies
         let startEnemies: Enemy[] = [];
         let nCols = 5 + spec.level;
         let types = spec.enemyTypes.length ? spec.enemyTypes : ["Alien"];
         for (let row = 0; row < ENEMY_ROWS; row++) {
             for (let col = 0; col < nCols; col++) {
                 let type = types[(row * nCols + col) % types.length];
-                // Stagger x start to avoid instant right wall hits
                 let xStart = 20 + col * ((360) / (nCols - 1));
                 startEnemies.push({
                     x: xStart,
@@ -70,7 +69,7 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
         enemies.current = startEnemies;
     };
 
-    // Start/restart logic (only triggers when switching to "playing")
+    // Start/restart logic
     useEffect(() => {
         if (gameState === "playing") {
             resetGame();
@@ -122,7 +121,7 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
             bullets.current.forEach(b => b.y += b.dy);
             bullets.current = bullets.current.filter(b => b.y > -10 && b.y < 420);
 
-            // Enemy movement (start with a delay to prevent instant drop!)
+            // Enemy movement
             enemies.current.forEach(e => {
                 e.x += e.dx;
                 if (e.x < 5 || e.x > 370) {
@@ -189,47 +188,66 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
             const ctx = canvasRef.current?.getContext("2d");
             if (!ctx) return;
             ctx.clearRect(0, 0, 400, 420);
-            ctx.fillStyle = "#53f";
-            ctx.fillRect(player.current.x, player.current.y, PLAYER_SIZE, PLAYER_SIZE);
-            ctx.font = "28px system-ui";
-            ctx.fillStyle = "#fff";
-            ctx.fillText("🚀", player.current.x + 2, player.current.y + 28);
 
+            // Draw player as big emoji
+            ctx.font = "38px system-ui";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("🚀", player.current.x + PLAYER_SIZE / 2, player.current.y + PLAYER_SIZE / 2);
+
+            // Draw enemies as big emojis
             enemies.current.forEach(e => {
-                ctx.fillStyle = "#f43";
-                ctx.fillRect(e.x, e.y, ENEMY_SIZE, ENEMY_SIZE);
-                ctx.font = "23px system-ui";
-                ctx.fillStyle = "#fff";
-                ctx.fillText(getEnemySprite(e.type), e.x + 3, e.y + 25);
+                ctx.font = "36px system-ui";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(getEnemySprite(e.type), e.x + ENEMY_SIZE / 2, e.y + ENEMY_SIZE / 2);
             });
 
+            // Draw bullets
             ctx.fillStyle = "#fff";
             bullets.current.forEach(b => {
                 ctx.fillRect(b.x, b.y, BULLET_SIZE, BULLET_SIZE);
             });
 
+            // Draw score/lives
             ctx.font = "bold 16px system-ui";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "alphabetic";
             ctx.fillStyle = "#333";
             ctx.fillText(`Score: ${score}`, 10, 418);
             ctx.fillText(`Lives: ${lives.current}`, 320, 418);
         }
+
         loop();
         return () => cancelAnimationFrame(raf);
         // eslint-disable-next-line
     }, [gameState, touch]);
 
     function TouchControls() {
+        // Helper to set a given control on
+        function handleDown(ctrl: "left" | "right" | "fire") {
+            setTouch(t => ({ ...t, [ctrl]: true }));
+        }
+        // Helper to set a given control off
+        function handleUp(ctrl: "left" | "right" | "fire") {
+            setTouch(t => ({ ...t, [ctrl]: false }));
+        }
+
+        // Pass these handlers to both pointer and touch events
+        const addHandlers = (ctrl: "left" | "right" | "fire") => ({
+            onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); handleDown(ctrl); },
+            onTouchEnd: () => handleUp(ctrl),
+            onTouchCancel: () => handleUp(ctrl),
+            onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); handleDown(ctrl); },
+            onPointerUp: () => handleUp(ctrl),
+            onPointerCancel: () => handleUp(ctrl),
+        });
+
         return (
             <div style={{ marginTop: 18, display: "flex", justifyContent: "center" }}>
-                <button onTouchStart={() => setTouch(t => ({ ...t, left: true }))}
-                        onTouchEnd={() => setTouch(t => ({ ...t, left: false }))}
-                        style={ctrlBtn}>◀️</button>
-                <button onTouchStart={() => setTouch(t => ({ ...t, right: true }))}
-                        onTouchEnd={() => setTouch(t => ({ ...t, right: false }))}
-                        style={ctrlBtn}>▶️</button>
-                <button onTouchStart={() => setTouch(t => ({ ...t, fire: true }))}
-                        onTouchEnd={() => setTouch(t => ({ ...t, fire: false }))}
-                        style={ctrlBtn}>🔫</button>
+                <button {...addHandlers("left")} style={ctrlBtn}>◀️</button>
+                <button {...addHandlers("right")} style={ctrlBtn}>▶️</button>
+                <button {...addHandlers("fire")} style={ctrlBtn}>🔫</button>
             </div>
         );
     }
@@ -298,5 +316,6 @@ const ctrlBtn: React.CSSProperties = {
     border: "none",
     background: "#eee",
     boxShadow: "0 2px 8px #0001",
-    cursor: "pointer"
+    cursor: "pointer",
+    touchAction: "none"
 };

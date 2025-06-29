@@ -216,7 +216,7 @@ export const handler = async (event: any = {}): Promise<any> => {
     // If jigsaw, generate/upload AI art or fallback
     if (item.type === "jigsaw") {
         try {
-            const promptText = `A bright, fun, detailed illustration of a cute animal OR a fun scene with animals. Make sure there are NO words or text in the image.`;
+            const promptText = `A bright, fun, detailed illustration of a cute animal OR a fun scene with animals OR a space scene with fun planets and rockets OR a fun image of a boat on the sea. Make sure there are NO words or text in the image.`;
             item.spec.imageUrl = await generateAndStoreJigsawImage(promptText, itemId);
         } catch (err) {
             console.error("Failed to generate/upload jigsaw image:", err);

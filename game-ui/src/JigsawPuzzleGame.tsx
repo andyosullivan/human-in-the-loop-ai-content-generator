@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 type Props = {
     imageUrl: string;
     pieces: number; // e.g. 16, 25, 36, etc. Must be a perfect square
-    size?: number;  // width/height in px
+    size?: number;  // optional max width in px, default 360
 };
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -54,24 +54,22 @@ export default function JigsawPuzzleGame({ imageUrl, pieces, size = 360 }: Props
     function renderTile(tileIdx: number, posIdx: number) {
         const tileRow = Math.floor(tileIdx / gridSize);
         const tileCol = tileIdx % gridSize;
-        const tileSize = size / gridSize;
 
         return (
             <div
                 key={posIdx}
                 onClick={() => handleClick(posIdx)}
                 style={{
-                    width: tileSize,
-                    height: tileSize,
+                    width: "100%",
+                    height: "100%",
                     boxSizing: "border-box",
                     border: selected === posIdx ? "2px solid #4f7cff" : "1px solid #bbb",
                     cursor: solved ? "default" : "pointer",
-                    display: "inline-block",
                     backgroundImage: `url(${imageUrl})`,
-                    backgroundPosition: `-${tileCol * tileSize}px -${tileRow * tileSize}px`,
-                    backgroundSize: `${size}px ${size}px`,
+                    backgroundPosition: `${(-tileCol * 100) / (gridSize - 1)}% ${(-tileRow * 100) / (gridSize - 1)}%`,
+                    backgroundSize: `${gridSize * 100}% ${gridSize * 100}%`,
                     opacity: solved ? 0.8 : 1,
-                    transition: "border 0.2s"
+                    transition: "border 0.2s",
                 }}
             />
         );
@@ -84,14 +82,16 @@ export default function JigsawPuzzleGame({ imageUrl, pieces, size = 360 }: Props
             </h4>
             <div
                 style={{
-                    width: size,
-                    height: size,
+                    width: "100%",
+                    maxWidth: size,
+                    aspectRatio: "1/1",
                     display: "grid",
                     gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
                     gridTemplateRows: `repeat(${gridSize}, 1fr)`,
                     gap: 0,
                     margin: "auto",
-                    userSelect: "none"
+                    userSelect: "none",
+                    background: "#e4ecfb"
                 }}
             >
                 {tiles.map((tileIdx, i) => renderTile(tileIdx, i))}

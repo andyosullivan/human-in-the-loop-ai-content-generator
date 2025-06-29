@@ -87,7 +87,7 @@ export default function ReviewPage() {
                 body: JSON.stringify({ count: requestCount, lang: "en" })
             });
             const data = await res.json();
-            alert("Request submitted! StepFunction execution started: " + data.executionArn);
+            //alert("Request submitted! StepFunction execution started: " + data.executionArn);
             fetchStats();
         } catch (e) {
             alert("Failed to request items: " + e);
