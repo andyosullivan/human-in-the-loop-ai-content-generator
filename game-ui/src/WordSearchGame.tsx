@@ -16,17 +16,37 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
     const [foundWords, setFoundWords] = useState<string[]>([]);
     const [foundPaths, setFoundPaths] = useState<Coord[][]>([]);
 
-    // Touch support helpers
+    // For mobile drag: track if a touch drag is active
+    const [touchActive, setTouchActive] = useState(false);
+
+    // --- Touch support: main fix! ---
+    const handleWrapperTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+        if (!touchActive) return;
+        if (e.touches.length === 1) {
+            const touch = e.touches[0];
+            // Find the element under the finger
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (el && el.tagName === "TD" && (el as HTMLElement).dataset.row && (el as HTMLElement).dataset.col) {
+                const i = parseInt((el as HTMLElement).dataset.row!, 10);
+                const j = parseInt((el as HTMLElement).dataset.col!, 10);
+                handleTouchMove(i, j);
+            }
+        }
+    };
+
     const handleTouchStart = (i: number, j: number) => {
+        setTouchActive(true);
         handleMouseDown(i, j);
     };
     const handleTouchMove = (i: number, j: number) => {
         handleMouseEnter(i, j);
     };
-    const handleTouchEnd = (i: number, j: number) => {
+    const handleTouchEnd = () => {
+        setTouchActive(false);
         handleMouseUp();
     };
 
+    // --- Mouse handlers (desktop) ---
     const handleMouseDown = (i: number, j: number) => {
         setIsMouseDown(true);
         setStartCell([i, j]);
@@ -34,7 +54,7 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
     };
 
     const handleMouseEnter = (i: number, j: number) => {
-        if (!isMouseDown || !startCell) return;
+        if (!(isMouseDown || touchActive) || !startCell) return;
 
         let dx = i - startCell[0];
         let dy = j - startCell[1];
@@ -55,14 +75,12 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
         let x = sx;
         let y = sy;
 
-        // Go from start to end in direction dir
         while (true) {
             line.push([x, y]);
             if (x === ex && y === ey) break;
             x += dx;
             y += dy;
         }
-
         return line;
     };
 
@@ -107,7 +125,7 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
         <div
             onMouseLeave={() => setIsMouseDown(false)}
             onMouseUp={handleMouseUp}
-            onTouchEnd={handleMouseUp}
+            onTouchEnd={handleTouchEnd}
             style={{ width: "100%" }}
         >
             <h4 style={{ marginTop: 0, textAlign: "center", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>
@@ -118,8 +136,11 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
                     width: "100%",
                     maxWidth: "100%",
                     overflowX: "auto",
-                    WebkitOverflowScrolling: "touch"
+                    WebkitOverflowScrolling: "touch",
+                    touchAction: "none"
                 }}
+                // key mobile fix: track drag across the whole grid
+                onTouchMove={handleWrapperTouchMove}
             >
                 <table
                     style={{
@@ -137,19 +158,18 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
                             {row.map((cell, j) => (
                                 <td
                                     key={j}
+                                    data-row={i}
+                                    data-col={j}
                                     onMouseDown={() => handleMouseDown(i, j)}
                                     onMouseEnter={() => handleMouseEnter(i, j)}
-                                    onTouchStart={(e) => {
+                                    onMouseUp={handleMouseUp}
+                                    onTouchStart={e => {
                                         e.preventDefault();
                                         handleTouchStart(i, j);
                                     }}
-                                    onTouchMove={(e) => {
+                                    onTouchEnd={e => {
                                         e.preventDefault();
-                                        handleTouchMove(i, j);
-                                    }}
-                                    onTouchEnd={(e) => {
-                                        e.preventDefault();
-                                        handleTouchEnd(i, j);
+                                        handleTouchEnd();
                                     }}
                                     style={{
                                         border: "1px solid #ccc",
@@ -158,9 +178,9 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
                                         fontWeight: 600,
                                         textAlign: "center",
                                         backgroundColor: isInFoundPath(i, j)
-                                            ? "#c6f6c6" // light green for found
+                                            ? "#c6f6c6"
                                             : isSelected(i, j)
-                                                ? "#d1eaff" // blue for current selection
+                                                ? "#d1eaff"
                                                 : undefined,
                                         userSelect: "none",
                                         cursor: "pointer",
