@@ -8,46 +8,84 @@ type WordSearchGameProps = {
 
 type Coord = [number, number];
 
+function safeParseInt(val: any, fallback: number): number {
+    const n = parseInt(val, 10);
+    return isNaN(n) ? fallback : n;
+}
+
 export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps) {
+    // --- All hooks must go at the top! ---
     const [selectedCells, setSelectedCells] = useState<Coord[]>([]);
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [startCell, setStartCell] = useState<Coord | null>(null);
-    const lowerWords = words.map((w) => w.toLowerCase());
+    const lowerWords = Array.isArray(words) ? words.map((w) => String(w).toLowerCase()) : [];
     const [foundWords, setFoundWords] = useState<string[]>([]);
     const [foundPaths, setFoundPaths] = useState<Coord[][]>([]);
-
-    // For mobile drag: track if a touch drag is active
     const [touchActive, setTouchActive] = useState(false);
 
-    // --- Touch support: main fix! ---
+    // Defensive: grid size
+    const maxRow = Array.isArray(grid) && grid.length > 0 && Array.isArray(grid[0]) ? grid.length : 0;
+    const maxCol = Array.isArray(grid) && grid.length > 0 && Array.isArray(grid[0]) ? grid[0].length : 0;
+
+    // --- Now do early return (after hooks) ---
+    if (!Array.isArray(grid) || grid.length === 0 || !Array.isArray(grid[0])) {
+        return <div style={{ color: "crimson" }}>Grid data is invalid.</div>;
+    }
+
+    // --- Touch support for mobile drag ---
     const handleWrapperTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-        if (!touchActive) return;
-        if (e.touches.length === 1) {
+        try {
+            if (!touchActive) return;
+            if (!grid || grid.length === 0) return;
+            if (e.touches.length !== 1) return;
             const touch = e.touches[0];
-            // Find the element under the finger
             const el = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (el && el.tagName === "TD" && (el as HTMLElement).dataset.row && (el as HTMLElement).dataset.col) {
-                const i = parseInt((el as HTMLElement).dataset.row!, 10);
-                const j = parseInt((el as HTMLElement).dataset.col!, 10);
-                handleTouchMove(i, j);
+            if (
+                el &&
+                el.tagName === "TD" &&
+                (el as HTMLElement).dataset.row !== undefined &&
+                (el as HTMLElement).dataset.col !== undefined
+            ) {
+                const i = safeParseInt((el as HTMLElement).dataset.row, -1);
+                const j = safeParseInt((el as HTMLElement).dataset.col, -1);
+                if (
+                    i >= 0 &&
+                    j >= 0 &&
+                    i < maxRow &&
+                    j < maxCol &&
+                    typeof grid[i]?.[j] !== "undefined"
+                ) {
+                    handleTouchMove(i, j);
+                }
             }
+        } catch (err) {
+            // No crash, just ignore
         }
     };
 
     const handleTouchStart = (i: number, j: number) => {
-        setTouchActive(true);
-        handleMouseDown(i, j);
+        try {
+            if (!grid[i] || typeof grid[i][j] === "undefined") return;
+            setTouchActive(true);
+            handleMouseDown(i, j);
+        } catch {}
     };
     const handleTouchMove = (i: number, j: number) => {
-        handleMouseEnter(i, j);
+        try {
+            if (!grid[i] || typeof grid[i][j] === "undefined") return;
+            handleMouseEnter(i, j);
+        } catch {}
     };
     const handleTouchEnd = () => {
-        setTouchActive(false);
-        handleMouseUp();
+        try {
+            setTouchActive(false);
+            handleMouseUp();
+        } catch {}
     };
 
     // --- Mouse handlers (desktop) ---
     const handleMouseDown = (i: number, j: number) => {
+        if (!grid[i] || typeof grid[i][j] === "undefined") return;
         setIsMouseDown(true);
         setStartCell([i, j]);
         setSelectedCells([[i, j]]);
@@ -55,6 +93,7 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
 
     const handleMouseEnter = (i: number, j: number) => {
         if (!(isMouseDown || touchActive) || !startCell) return;
+        if (!grid[i] || typeof grid[i][j] === "undefined") return;
 
         let dx = i - startCell[0];
         let dy = j - startCell[1];
@@ -75,26 +114,33 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
         let x = sx;
         let y = sy;
 
+        let safetyCounter = 0;
+        const maxSafety = Math.max(maxRow, maxCol) + 3; // should never exceed grid size
         while (true) {
+            if (x < 0 || y < 0 || x >= maxRow || y >= maxCol) break;
             line.push([x, y]);
             if (x === ex && y === ey) break;
             x += dx;
             y += dy;
+            safetyCounter++;
+            if (safetyCounter > maxSafety) break; // prevent infinite loop
         }
         return line;
     };
 
     const handleMouseUp = () => {
-        if (currentWord.length === 0) return;
+        try {
+            if (currentWord.length === 0) return;
 
-        if (lowerWords.includes(currentWord) && !foundWords.includes(currentWord)) {
-            setFoundWords([...foundWords, currentWord]);
-            setFoundPaths([...foundPaths, selectedCells]);
-        }
+            if (lowerWords.includes(currentWord) && !foundWords.includes(currentWord)) {
+                setFoundWords([...foundWords, currentWord]);
+                setFoundPaths([...foundPaths, selectedCells]);
+            }
 
-        setIsMouseDown(false);
-        setStartCell(null);
-        setSelectedCells([]);
+            setIsMouseDown(false);
+            setStartCell(null);
+            setSelectedCells([]);
+        } catch {}
     };
 
     const isInFoundPath = (i: number, j: number) =>
@@ -112,13 +158,22 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
 
     const isFound = (word: string) => foundWords.includes(word.toLowerCase());
 
-    const currentWord = selectedCells.map(([i, j]) => grid[i][j]).join("").toLowerCase();
+    // Defensive: only build word from valid cells
+    const currentWord = selectedCells
+        .filter(([i, j]) => grid[i] && typeof grid[i][j] !== "undefined")
+        .map(([i, j]) => grid[i][j])
+        .join("")
+        .toLowerCase();
 
     const getLiveFeedback = () => {
-        if (currentWord.length === 0) return null;
-        if (foundWords.includes(currentWord)) return `🟡 Already found: ${currentWord.toUpperCase()}`;
-        if (lowerWords.includes(currentWord)) return `✅ Found: ${currentWord.toUpperCase()}`;
-        return `❌ Not in list: ${currentWord.toUpperCase()}`;
+        try {
+            if (currentWord.length === 0) return null;
+            if (foundWords.includes(currentWord)) return `🟡 Already found: ${currentWord.toUpperCase()}`;
+            if (lowerWords.includes(currentWord)) return `✅ Found: ${currentWord.toUpperCase()}`;
+            return `❌ Not in list: ${currentWord.toUpperCase()}`;
+        } catch {
+            return null;
+        }
     };
 
     return (
@@ -139,7 +194,6 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
                     WebkitOverflowScrolling: "touch",
                     touchAction: "none"
                 }}
-                // key mobile fix: track drag across the whole grid
                 onTouchMove={handleWrapperTouchMove}
             >
                 <table
@@ -160,16 +214,32 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
                                     key={j}
                                     data-row={i}
                                     data-col={j}
-                                    onMouseDown={() => handleMouseDown(i, j)}
-                                    onMouseEnter={() => handleMouseEnter(i, j)}
-                                    onMouseUp={handleMouseUp}
+                                    onMouseDown={() => {
+                                        try {
+                                            handleMouseDown(i, j);
+                                        } catch {}
+                                    }}
+                                    onMouseEnter={() => {
+                                        try {
+                                            handleMouseEnter(i, j);
+                                        } catch {}
+                                    }}
+                                    onMouseUp={() => {
+                                        try {
+                                            handleMouseUp();
+                                        } catch {}
+                                    }}
                                     onTouchStart={e => {
-                                        e.preventDefault();
-                                        handleTouchStart(i, j);
+                                        try {
+                                            e.preventDefault();
+                                            handleTouchStart(i, j);
+                                        } catch {}
                                     }}
                                     onTouchEnd={e => {
-                                        e.preventDefault();
-                                        handleTouchEnd();
+                                        try {
+                                            e.preventDefault();
+                                            handleTouchEnd();
+                                        } catch {}
                                     }}
                                     style={{
                                         border: "1px solid #ccc",
@@ -189,7 +259,7 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
                                         maxWidth: 42,
                                     }}
                                 >
-                                    {cell}
+                                    {typeof cell === "string" && cell.length === 1 ? cell : " "}
                                 </td>
                             ))}
                         </tr>
@@ -202,7 +272,7 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
                 <div style={{ marginTop: 10, fontWeight: 500 }}>{getLiveFeedback()}</div>
             )}
 
-            {words.length > 0 && (
+            {Array.isArray(words) && words.length > 0 && (
                 <div style={{ marginTop: 16 }}>
                     <b>Words to Find:</b>
                     <ul>
