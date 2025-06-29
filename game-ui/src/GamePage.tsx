@@ -150,13 +150,13 @@
                 }}>
                     <h2 style={{
                         textAlign: "center",
-                        fontSize: 27,
+                        fontSize: 20,
                         color: "#2b2d42",
                         fontWeight: 900,
                         letterSpacing: "-1px",
                         marginBottom: 14
                     }}>
-                        Random AI-Generated Game
+                        Random Game With AI-Generated, Human-Approved, Content
                     </h2>
                     <div style={{ textAlign: "center", marginBottom: 18 }}>
                         <button

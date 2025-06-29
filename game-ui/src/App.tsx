@@ -28,8 +28,7 @@ export default function App() {
   return (
       <Router>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/game" element={<GamePage />} />
+          <Route path="/" element={<GamePage />} />
         </Routes>
       </Router>
   );

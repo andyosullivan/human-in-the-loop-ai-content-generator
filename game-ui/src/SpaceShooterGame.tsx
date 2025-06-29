@@ -17,15 +17,28 @@ type Enemy = {
 
 type Bullet = { x: number, y: number, dy: number };
 
+const VIRTUAL_WIDTH = 400;
+const VIRTUAL_HEIGHT = 420;
 const ENEMY_ROWS = 2;
-const ENEMY_SIZE = 36;
+const ENEMY_SIZE = 54; // made bigger!
 const ENEMY_SPEED = 1.1;
-const PLAYER_SIZE = 30;
+const PLAYER_SIZE = 48; // made bigger!
 const PLAYER_SPEED = 6;
-const BULLET_SIZE = 7;
+const BULLET_SIZE = 13; // made bigger!
 const BULLET_SPEED = 11;
 
 export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
+    // Responsive canvas
+    const [canvasWidth, setCanvasWidth] = useState(VIRTUAL_WIDTH);
+    useEffect(() => {
+        function handleResize() {
+            setCanvasWidth(Math.min(VIRTUAL_WIDTH, Math.floor(window.innerWidth * 0.97)));
+        }
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
+
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [gameState, setGameState] = useState<"start" | "playing" | "won" | "lost">("start");
     const [score, setScore] = useState(0);
@@ -48,17 +61,18 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
         lives.current = 3;
         setScore(0);
 
-        // build enemies
+        // build enemies - always start them *safely high up* and avoid right wall spawn
         let startEnemies: Enemy[] = [];
         let nCols = 5 + spec.level;
         let types = spec.enemyTypes.length ? spec.enemyTypes : ["Alien"];
         for (let row = 0; row < ENEMY_ROWS; row++) {
             for (let col = 0; col < nCols; col++) {
                 let type = types[(row * nCols + col) % types.length];
+                // Stagger x start to avoid instant right wall hits
                 let xStart = 20 + col * ((360) / (nCols - 1));
                 startEnemies.push({
                     x: xStart,
-                    y: 40 + row * 40,
+                    y: 40 + row * 56,
                     dx: ENEMY_SPEED * (Math.random() > 0.5 ? 1 : -1) * (1 + spec.level * 0.1),
                     dy: 0,
                     type,
@@ -105,7 +119,7 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
             // Movement
             if (keys.current["arrowleft"] || keys.current["a"] || touch.left) player.current.x -= PLAYER_SPEED;
             if (keys.current["arrowright"] || keys.current["d"] || touch.right) player.current.x += PLAYER_SPEED;
-            player.current.x = Math.max(0, Math.min(360, player.current.x));
+            player.current.x = Math.max(0, Math.min(VIRTUAL_WIDTH - PLAYER_SIZE, player.current.x));
 
             // Fire
             if ((keys.current[" "] || keys.current["arrowup"] || keys.current["w"] || touch.fire) && Date.now() - lastFire > 350) {
@@ -119,14 +133,14 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
 
             // Bullet movement
             bullets.current.forEach(b => b.y += b.dy);
-            bullets.current = bullets.current.filter(b => b.y > -10 && b.y < 420);
+            bullets.current = bullets.current.filter(b => b.y > -10 && b.y < VIRTUAL_HEIGHT);
 
             // Enemy movement
             enemies.current.forEach(e => {
                 e.x += e.dx;
-                if (e.x < 5 || e.x > 370) {
+                if (e.x < 5 || e.x > VIRTUAL_WIDTH - ENEMY_SIZE - 5) {
                     e.dx *= -1;
-                    e.y += 16;
+                    e.y += 18;
                 }
             });
 
@@ -164,7 +178,7 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
                     enemies.current = enemies.current.filter(en => en.id !== e.id);
                     player.current.x = 180;
                 }
-                if (e.y + ENEMY_SIZE > 400) {
+                if (e.y + ENEMY_SIZE > VIRTUAL_HEIGHT - 20) {
                     lives.current -= 1;
                     enemies.current = enemies.current.filter(en => en.id !== e.id);
                 }
@@ -184,20 +198,25 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
             setFrame(f => f + 1);
             raf = requestAnimationFrame(loop);
         }
+
         function draw() {
             const ctx = canvasRef.current?.getContext("2d");
             if (!ctx) return;
-            ctx.clearRect(0, 0, 400, 420);
+            // Responsive scale
+            const scale = canvasWidth / VIRTUAL_WIDTH;
+            ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+            ctx.clearRect(0, 0, VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
             // Draw player as big emoji
-            ctx.font = "38px system-ui";
+            ctx.font = "48px system-ui";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("🚀", player.current.x + PLAYER_SIZE / 2, player.current.y + PLAYER_SIZE / 2);
 
             // Draw enemies as big emojis
             enemies.current.forEach(e => {
-                ctx.font = "36px system-ui";
+                ctx.font = "44px system-ui";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
                 ctx.fillText(getEnemySprite(e.type), e.x + ENEMY_SIZE / 2, e.y + ENEMY_SIZE / 2);
@@ -210,18 +229,21 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
             });
 
             // Draw score/lives
-            ctx.font = "bold 16px system-ui";
+            ctx.font = "bold 18px system-ui";
             ctx.textAlign = "left";
             ctx.textBaseline = "alphabetic";
             ctx.fillStyle = "#333";
-            ctx.fillText(`Score: ${score}`, 10, 418);
-            ctx.fillText(`Lives: ${lives.current}`, 320, 418);
+            ctx.fillText(`Score: ${score}`, 10, VIRTUAL_HEIGHT - 2);
+            ctx.fillText(`Lives: ${lives.current}`, VIRTUAL_WIDTH - 100, VIRTUAL_HEIGHT - 2);
+
+            // Reset transform for safety
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
         }
 
         loop();
         return () => cancelAnimationFrame(raf);
         // eslint-disable-next-line
-    }, [gameState, touch]);
+    }, [gameState, touch, canvasWidth]);
 
     function TouchControls() {
         // Helper to set a given control on
@@ -278,15 +300,20 @@ export default function SpaceShooterGame({ spec }: { spec: SpaceShooterSpec }) {
             )}
             {gameState === "playing" && (
                 <>
-                    <canvas ref={canvasRef} width={400} height={420}
-                            style={{
-                                borderRadius: 14,
-                                boxShadow: "0 2px 10px #0002",
-                                background: "#1a2133",
-                                margin: "0 auto",
-                                maxWidth: "95vw",
-                                display: "block"
-                            }}
+                    <canvas
+                        ref={canvasRef}
+                        width={canvasWidth}
+                        height={VIRTUAL_HEIGHT}
+                        style={{
+                            borderRadius: 14,
+                            boxShadow: "0 2px 10px #0002",
+                            background: "#1a2133",
+                            margin: "0 auto",
+                            maxWidth: "97vw",
+                            width: "100%",
+                            display: "block",
+                            touchAction: "none"
+                        }}
                     />
                     <TouchControls />
                 </>
