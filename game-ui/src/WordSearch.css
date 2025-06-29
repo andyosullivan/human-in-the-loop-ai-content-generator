@@ -1,3 +1,12 @@
 td:hover {
     background-color: #eef;
 }
+
+@media (max-width: 480px) {
+    table {
+        font-size: 13px !important;
+    }
+    td {
+        padding: 4px 6px !important;
+    }
+}

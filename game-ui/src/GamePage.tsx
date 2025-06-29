@@ -139,7 +139,6 @@
             }}>
                 <div style={{
                     maxWidth: 500,
-                    width: "100%",
                     margin: "32px auto",
                     background: "#fff",
                     borderRadius: 22,

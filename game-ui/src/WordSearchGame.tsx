@@ -16,6 +16,16 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
     const [foundWords, setFoundWords] = useState<string[]>([]);
     const [foundPaths, setFoundPaths] = useState<Coord[][]>([]);
 
+    // Touch support helpers
+    const handleTouchStart = (i: number, j: number) => {
+        handleMouseDown(i, j);
+    };
+    const handleTouchMove = (i: number, j: number) => {
+        handleMouseEnter(i, j);
+    };
+    const handleTouchEnd = (i: number, j: number) => {
+        handleMouseUp();
+    };
 
     const handleMouseDown = (i: number, j: number) => {
         setIsMouseDown(true);
@@ -26,8 +36,8 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
     const handleMouseEnter = (i: number, j: number) => {
         if (!isMouseDown || !startCell) return;
 
-        const dx = i - startCell[0];
-        const dy = j - startCell[1];
+        let dx = i - startCell[0];
+        let dy = j - startCell[1];
 
         const direction = getDirection(dx, dy);
         if (!direction) return;
@@ -45,15 +55,16 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
         let x = sx;
         let y = sy;
 
-        while ((dx === 0 || x !== ex + dx) && (dy === 0 || y !== ey + dy)) {
+        // Go from start to end in direction dir
+        while (true) {
             line.push([x, y]);
+            if (x === ex && y === ey) break;
             x += dx;
             y += dy;
         }
 
         return line;
     };
-
 
     const handleMouseUp = () => {
         if (currentWord.length === 0) return;
@@ -78,20 +89,6 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
         return [dx, dy];
     };
 
-    const buildLine = (start: Coord, dir: Coord, maxRows: number, maxCols: number): Coord[] => {
-        const [dx, dy] = dir;
-        let line: Coord[] = [];
-        let [x, y] = start;
-
-        while (x >= 0 && x < maxRows && y >= 0 && y < maxCols) {
-            line.push([x, y]);
-            x += dx;
-            y += dy;
-        }
-
-        return line;
-    };
-
     const isSelected = (i: number, j: number) =>
         selectedCells.some(([x, y]) => x === i && y === j);
 
@@ -107,40 +104,79 @@ export default function WordSearchGame({ grid, words = [] }: WordSearchGameProps
     };
 
     return (
-        <div onMouseLeave={() => setIsMouseDown(false)} onMouseUp={handleMouseUp}>
+        <div
+            onMouseLeave={() => setIsMouseDown(false)}
+            onMouseUp={handleMouseUp}
+            onTouchEnd={handleMouseUp}
+            style={{ width: "100%" }}
+        >
             <h4 style={{ marginTop: 0, textAlign: "center", fontSize: 22, fontWeight: 800, marginBottom: 20 }}>
                 Wordsearch
             </h4>
-            <table style={{ borderCollapse: "collapse", margin: "1rem 0" }}>
-                <tbody>
-                {grid.map((row, i) => (
-                    <tr key={i}>
-                        {row.map((cell, j) => (
-                            <td
-                                key={j}
-                                onMouseDown={() => handleMouseDown(i, j)}
-                                onMouseEnter={() => handleMouseEnter(i, j)}
-                                style={{
-                                    border: "1px solid #ccc",
-                                    padding: "6px 10px",
-                                    fontFamily: "monospace",
-                                    fontWeight: 600,
-                                    backgroundColor: isInFoundPath(i, j)
-                                        ? "#c6f6c6" // light green for found
-                                        : isSelected(i, j)
-                                            ? "#d1eaff" // blue for current selection
-                                            : undefined,
-                                    userSelect: "none",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                {cell}
-                            </td>
-                        ))}
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+            <div
+                style={{
+                    width: "100%",
+                    maxWidth: "100%",
+                    overflowX: "auto",
+                    WebkitOverflowScrolling: "touch"
+                }}
+            >
+                <table
+                    style={{
+                        borderCollapse: "collapse",
+                        margin: "1rem 0",
+                        width: "100%",
+                        minWidth: 240,
+                        fontSize: "clamp(14px, 4vw, 22px)",
+                        tableLayout: "fixed",
+                    }}
+                >
+                    <tbody>
+                    {grid.map((row, i) => (
+                        <tr key={i}>
+                            {row.map((cell, j) => (
+                                <td
+                                    key={j}
+                                    onMouseDown={() => handleMouseDown(i, j)}
+                                    onMouseEnter={() => handleMouseEnter(i, j)}
+                                    onTouchStart={(e) => {
+                                        e.preventDefault();
+                                        handleTouchStart(i, j);
+                                    }}
+                                    onTouchMove={(e) => {
+                                        e.preventDefault();
+                                        handleTouchMove(i, j);
+                                    }}
+                                    onTouchEnd={(e) => {
+                                        e.preventDefault();
+                                        handleTouchEnd(i, j);
+                                    }}
+                                    style={{
+                                        border: "1px solid #ccc",
+                                        padding: "clamp(7px, 3vw, 18px) clamp(10px, 3vw, 18px)",
+                                        fontFamily: "monospace",
+                                        fontWeight: 600,
+                                        textAlign: "center",
+                                        backgroundColor: isInFoundPath(i, j)
+                                            ? "#c6f6c6" // light green for found
+                                            : isSelected(i, j)
+                                                ? "#d1eaff" // blue for current selection
+                                                : undefined,
+                                        userSelect: "none",
+                                        cursor: "pointer",
+                                        transition: "background 0.15s",
+                                        minWidth: 28,
+                                        maxWidth: 42,
+                                    }}
+                                >
+                                    {cell}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
 
             {currentWord && (
                 <div style={{ marginTop: 10, fontWeight: 500 }}>{getLiveFeedback()}</div>
