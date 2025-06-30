@@ -15,6 +15,10 @@ This solution is a framework for this, using games as an example - but it could 
 - A mobile responsive webpage to be a "sample consumer" for the content generator i.e. you can use it to play the games.
 
 ## AI Content Generator app
+
+#### Screenshot of admin login page - secured using AWS Cognito
+<img width="896" alt="Screenshot 2025-06-30 at 12 24 15" src="https://github.com/user-attachments/assets/3522e682-f8c6-48f5-bb65-6625c1ce52fc" />
+
 #### Screenshot of the admin page - showing the panel to allow you to request more game items to be generated, and stats on those already generated.
 <img width="1410" alt="Screenshot 2025-06-30 at 07 56 05" src="https://github.com/user-attachments/assets/c071a8fe-2004-4a1a-868b-c44035bff4b0" />
 
