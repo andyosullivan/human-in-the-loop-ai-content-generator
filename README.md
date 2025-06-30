@@ -85,5 +85,8 @@ by humans.
 - 2 **Lambdas**
   - LogAnalytics - posts game stats to the analytics dynamodb table.
   - RandomApproved - gets a random game item.
+ 
+## Architecture Diagram
+![diagram](https://github.com/user-attachments/assets/e8830f21-864b-4b7c-8fe6-fe3033ded4e7)
 
 **Both stacks are fully deployed and working using CDK.**
