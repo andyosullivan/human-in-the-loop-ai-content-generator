@@ -38,7 +38,7 @@ The project has two main solutions:
     - Reviewer screen - where admin users can generate new game items, approve or reject them, and view game item stats.
     - Analytics sceeen - where admin users can view stats from the game app (which consumes the generated game items).
     - Prompt-Config screen - where admin users can view and edit the prompt used to generate game items.
-- **API Gateway**
+- **API Gateway** to call the Lambdas
 - 8 **Lambdas**
     - Generator: generates content for games using **Bedrock** (Antropic's Claude for text, Titan for images)
     - RequestItems: calls Stepfunctions to run the Generator Lambda multiple times.
@@ -85,6 +85,7 @@ by humans.
   - LogAnalytics - posts game stats to the analytics dynamodb table.
   - RandomApproved - gets a random game item.
 - SSL cert for domain name generated using **ACM**
+- API Gateway
  
 ## Architecture Diagram
 ![diagram](https://github.com/user-attachments/assets/e8830f21-864b-4b7c-8fe6-fe3033ded4e7)
