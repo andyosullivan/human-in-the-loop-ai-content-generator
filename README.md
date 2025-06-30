@@ -26,6 +26,12 @@ The project has two main solutions:
 #### Screenshot of the ability to view the JSON code of a game item to be approved or rejected.
 <img width="1206" alt="Screenshot 2025-06-26 at 13 05 56" src="https://github.com/user-attachments/assets/106e0e88-2c23-412e-a544-0c968f318ba4" />
 
+#### Screenshot of the Prompt Config page - where we can edit the prompt on-screen, so we don't need to re-deploy code:
+<img width="1039" alt="Screenshot 2025-06-30 at 09 28 39" src="https://github.com/user-attachments/assets/2c3301db-d25d-454f-a206-6afc6780a20c" />
+
+#### Screenshot of the Analytics page, where we can view usage of the game app:
+<img width="1400" alt="Screenshot 2025-06-30 at 09 28 24" src="https://github.com/user-attachments/assets/f2263e20-0afa-460c-976e-a0eb88d10cad" />
+
 #### Architecture:
 - React app, hosted on **S3**, fronted by **Cloudfront**
     - User authentication using **Cognito**
@@ -52,7 +58,7 @@ The project has two main solutions:
 
 ## Sample Consumer app
 
-A game https://newgameplease.com/ where the user just hit "New Game Please" to play another game, whose content is AI genetated, and approved
+A game https://newgameplease.com/ where the user just hits "New Game Please" to play another game, whose content is AI genetated, and approved
 by humans.
 
 #### Screenshot of Puzzle game:
