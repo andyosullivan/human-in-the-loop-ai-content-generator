@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "./AdminAuthContext";
+import heroImage from "./assets/images/heroimage.png"; // adjust the path if needed
 
 export default function AdminLoginPage() {
     const { login } = useAuth();
@@ -29,6 +30,12 @@ export default function AdminLoginPage() {
 
     return (
         <div style={{ maxWidth: 360, margin: "100px auto", padding: 32, border: "1px solid #eee", borderRadius: 12 }}>
+            {/* Hero image added here */}
+            <img
+                src={heroImage}
+                alt="Hero"
+                style={{ display: "block", width: "100%", maxHeight: 220, objectFit: "contain", marginBottom: 24 }}
+            />
             <h2>Admin Login</h2>
             <form onSubmit={onSubmit}>
                 <input
@@ -61,7 +68,7 @@ export default function AdminLoginPage() {
                         disabled={loading}
                     />
                 )}
-                <button type="submit" disabled={loading || (stage === "newpw" && !newPassword)} style={{ width: "100%", padding: 8 }}>
+                <button type="submit" disabled={loading || (stage === "newpw" && !newPassword)} style={{ marginLeft: 10, width: "100%", padding: 8 }}>
                     {loading ? (stage === "newpw" ? "Updating…" : "Logging in…") : (stage === "newpw" ? "Set New Password" : "Log In")}
                 </button>
             </form>
