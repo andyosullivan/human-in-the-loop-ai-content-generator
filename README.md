@@ -14,7 +14,7 @@ The project has two main solutions:
 #### Screenshot of the admin page - showing the panel to allow you to request more game items to be generated, and stats on those already generated.
 <img width="1410" alt="Screenshot 2025-06-30 at 07 56 05" src="https://github.com/user-attachments/assets/c071a8fe-2004-4a1a-868b-c44035bff4b0" />
 
-#### Screenshot of approving a puzzle game:
+#### Screenshot of approving a Puzzle game:
 <img width="1413" alt="Screenshot 2025-06-30 at 07 56 41" src="https://github.com/user-attachments/assets/18f4c074-bca8-49f7-b233-22651d396830" />
 
 #### Screenshot of approving an Odd One Out game:
@@ -52,6 +52,24 @@ The project has two main solutions:
 
 ## Sample Consumer app
 
+A game https://newgameplease.com/ where the user just hit "New Game Please" to play another game, whose content is AI genetated, and approved
+by humans.
+
+#### Screenshot of Puzzle game:
+<img width="669" alt="Screenshot 2025-06-30 at 09 05 02" src="https://github.com/user-attachments/assets/3b4fbf3b-f311-4a83-86ae-c45d7f4610de" />
+
+#### Screenshot of Word Search game:
+<img width="668" alt="Screenshot 2025-06-30 at 09 05 21" src="https://github.com/user-attachments/assets/fe27d91b-2905-44db-b5e8-ac27bdf05909" />
+
+#### Screenshot of Space Shooter game:
+<img width="689" alt="Screenshot 2025-06-30 at 09 05 38" src="https://github.com/user-attachments/assets/5ac01400-0471-4a5d-98fb-8f6263a2a5b6" />
+
+#### Screenshot of True or False game:
+<img width="683" alt="Screenshot 2025-06-30 at 09 06 03" src="https://github.com/user-attachments/assets/9b68d7a9-66b7-4c62-a09c-665f40b35dd9" />
+
+#### Screenshot of Quiz game:
+<img width="680" alt="Screenshot 2025-06-30 at 09 06 14" src="https://github.com/user-attachments/assets/95889f03-4a5d-4886-b887-e7a3029ca9d2" />
+
 #### Architecture:
 - React app hosted on **S3**, fronted by **Cloudfront**
   - This is an unauthenticated app to play games (which use the generated and approved game items).
@@ -61,4 +79,4 @@ The project has two main solutions:
   - LogAnalytics - posts game stats to the analytics dynamodb table.
   - RandomApproved - gets a random game item.
 
-**Both stacks are deployed using CDK.**
+**Both stacks are fully deployed and working using CDK.**
