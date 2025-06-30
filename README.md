@@ -11,7 +11,7 @@ The project has two main solutions:
 - A mobile responsive webpage to be a "sample consumer" for the content generator i.e. you can use it to play the games.
 
 ## AI Content Generator app
-#### Screenshot of admin page with Game Item Stats:
+#### Screenshot of the admin page - showing the panel to allow you to request more game items to be generated, and stats on those already generated.
 <img width="1410" alt="Screenshot 2025-06-30 at 07 56 05" src="https://github.com/user-attachments/assets/c071a8fe-2004-4a1a-868b-c44035bff4b0" />
 
 #### Screenshot of approving a puzzle game:
