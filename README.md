@@ -1,4 +1,5 @@
 # Human-in-the-loop AI Content Generator
+<img width="500" alt="Solution logo" src="https://github.com/user-attachments/assets/e22ec7f6-150d-431a-b7b4-0a1df6756cea" />
 
 Welcome! This repo contains a project built for the https://awslambdahackathon.devpost.com/ hackathon.
 
