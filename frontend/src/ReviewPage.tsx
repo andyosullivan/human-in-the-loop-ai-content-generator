@@ -35,6 +35,20 @@ const ALL_TYPES = [
     "odd_one_out",
 ] as const;
 
+const TYPE_LABELS: Record<string, string> = {
+    quiz_mcq: "Quiz",
+    word_search: "Word Search",
+    memory_match: "Memory Match",
+    space_shooter: "Space Shooter",
+    jigsaw: "Jigsaw Puzzle",
+    true_false: "True / False",
+    odd_one_out: "Odd One Out",
+};
+
+function prettyType(raw: string) {
+    return TYPE_LABELS[raw] ?? raw.replace(/_/g, " ");
+}
+
 // ---------- page ----------
 export default function ReviewPage() {
     // lists & stats
@@ -424,7 +438,7 @@ export default function ReviewPage() {
                                     key={type}
                                     style={{ background: idx % 2 ? "#fff" : "#f5f6fa" }}
                                 >
-                                    <td style={{ padding: 10 }}>{type}</td>
+                                    <td style={{ padding: 10 }}>{prettyType(type)}</td>
                                     <td style={{ padding: 10 }}>{st.PENDING || 0}</td>
                                     <td style={{ padding: 10 }}>{st.APPROVED || 0}</td>
                                     <td style={{ padding: 10 }}>{st.REJECTED || 0}</td>
