@@ -2,7 +2,11 @@
 
 Welcome! This repo contains a project built for the https://awslambdahackathon.devpost.com/ hackathon.
 
-The project has two main solutions, all to solve the problem **"Can we generate AI content, but also have a human approve it - easily and efficiently"**
+The project has two main solutions, all to solve the problem:
+
+**"Can we generate AI content, but also have a human approve it - easily and efficiently?"**.
+
+This solution is a framework for this, using games as an example - but it could be easily repurposed for other use-cases.
 
 ### AI Content Generator app - https://d212qaz9q2clt2.cloudfront.net/
 - A webpage to allow you to create AI content e.g. for games, using Bedrock (Anthropic Claude, Titan Image Generator), which you can then approve or reject i.e. a human-in-the-loop in case the AI creates sub-quality content.
