@@ -12,13 +12,16 @@ The project has two main solutions:
 
 ## AI Content Generator app
 #### Screenshot of admin page with Game Item Stats:
-<img width="1208" alt="Screenshot 2025-06-26 at 13 02 57" src="https://github.com/user-attachments/assets/4ed34f76-f946-4def-b2e1-28e83cd2725d" />
+<img width="1410" alt="Screenshot 2025-06-30 at 07 56 05" src="https://github.com/user-attachments/assets/c071a8fe-2004-4a1a-868b-c44035bff4b0" />
 
 #### Screenshot of approving a puzzle game:
-<img width="1206" alt="Screenshot 2025-06-26 at 13 03 57" src="https://github.com/user-attachments/assets/4ce68790-139d-4547-8fe9-59978af36b9f" />
+<img width="1413" alt="Screenshot 2025-06-30 at 07 56 41" src="https://github.com/user-attachments/assets/18f4c074-bca8-49f7-b233-22651d396830" />
 
 #### Screenshot of approving an Odd One Out game:
-<img width="1206" alt="Screenshot 2025-06-26 at 13 04 08" src="https://github.com/user-attachments/assets/edaba03b-be5b-4acb-a798-4184aeb7ab77" />
+<img width="1411" alt="Screenshot 2025-06-30 at 07 57 10" src="https://github.com/user-attachments/assets/5c6bc516-a7ee-4155-a5b2-088de47de0fa" />
+
+#### Screenshot of approving a Word Search game:
+<img width="1410" alt="Screenshot 2025-06-30 at 07 56 55" src="https://github.com/user-attachments/assets/ee96a515-4143-4627-8486-a150e9c26077" />
 
 #### Screenshot of the ability to view the JSON code of a game item to be approved or rejected.
 <img width="1206" alt="Screenshot 2025-06-26 at 13 05 56" src="https://github.com/user-attachments/assets/106e0e88-2c23-412e-a544-0c968f318ba4" />
