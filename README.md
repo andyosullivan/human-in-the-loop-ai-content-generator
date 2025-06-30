@@ -55,7 +55,6 @@ The project has two main solutions:
     - AnalyticsTable - to store analytics from the game app
     - PromptConfig - to store the prompt used to generate the game items
 - A **S3 Bucket** to store generated images (used in one of the game types) - this is fronted by **Cloudfront**, secured via **OAI**.
-- SSL cert for Cloudfront generated using **ACM**
 
 ## Sample Consumer app
 
@@ -85,6 +84,7 @@ by humans.
 - 2 **Lambdas**
   - LogAnalytics - posts game stats to the analytics dynamodb table.
   - RandomApproved - gets a random game item.
+- SSL cert for domain name generated using **ACM**
  
 ## Architecture Diagram
 ![diagram](https://github.com/user-attachments/assets/e8830f21-864b-4b7c-8fe6-fe3033ded4e7)
