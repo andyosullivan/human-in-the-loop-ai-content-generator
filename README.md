@@ -20,6 +20,7 @@ This solution is a framework for this, using games as an example - but it could 
 <img width="896" alt="Screenshot 2025-06-30 at 12 24 15" src="https://github.com/user-attachments/assets/3522e682-f8c6-48f5-bb65-6625c1ce52fc" />
 
 #### Screenshot of the admin page - showing the panel to allow you to request more game items to be generated, and stats on those already generated.
+You can select an individual type to be generated, or by default a random selection will be generated.
 <img width="1410" alt="Screenshot 2025-06-30 at 07 56 05" src="https://github.com/user-attachments/assets/c071a8fe-2004-4a1a-868b-c44035bff4b0" />
 
 #### Screenshot of approving a Puzzle game:
