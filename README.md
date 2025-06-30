@@ -92,6 +92,6 @@ by humans.
 - API Gateway
  
 ## Architecture Diagram
-![diagram](https://github.com/user-attachments/assets/e8830f21-864b-4b7c-8fe6-fe3033ded4e7)
+![diagram copy](https://github.com/user-attachments/assets/7ea1a3ab-fff2-4b9c-8098-f4c87a867014)
 
 **Both stacks are fully deployed and working using CDK.**
