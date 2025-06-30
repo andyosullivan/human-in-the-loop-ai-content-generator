@@ -41,6 +41,7 @@ The project has two main solutions:
 - **API Gateway**
 - 8 **Lambdas**
     - Generator: generates content for games using **Bedrock** (Antropic's Claude for text, Titan for images)
+    - RequestItems: calls Stepfunctions to run the Generator Lambda multiple times.
     - SetPromptConfig: to save / update the prompt used with Bedrock - so the admin user can edit it on-screen.
     - GetPromptConfig: to get the prompt used with Bedrock
     - ListPending: to get the list of game items (generated via Bedrock) to be approved or rejected.
